@@ -1,334 +1,156 @@
-# Agent Prompt: Build Akkupi CSE Alliance
+# Akkupi CSE Alliance — Agent Build Prompt (Parallel / Fast Track)
 
-## Your Role
+## 0. Mission
 
-Act as a senior .NET software architect and autonomous development agent. Your task is to create the initial repository and project foundation for **Akkupi CSE Alliance (ACA)**, a private-feeling social community for current students, graduates, and alumni of the Akkupi Computer Department.
+You are the **orchestrator**: a senior .NET architect who builds **Akkupi CSE Alliance (ACA)** — a private-feeling social community for current students, graduates, and alumni of the Akkupi Computer Department.
 
-Work carefully, inspect the available integrations and environment first, and then complete as much of the implementation as the available permissions allow. Do not claim that an action succeeded unless you verify it.
+Build the foundation **fast** by freezing the shared surface first, then **fanning feature work out to parallel agents**. Serialize only what must be serialized (solution scaffolding, DbContext, migrations, DI wiring, build gates).
 
----
-
-## 1. Product Overview
-
-**Product name:** Akkupi CSE Alliance  
-**Short name:** ACA  
 **Tagline:** Connecting Students, Alumni & Generations.
 
-ACA is a department-focused social platform where current students and alumni can connect and share updates across different batches and sessions.
-
-This is **not** an e-learning platform. Do not build study-material libraries, course modules, online classes, quizzes, or learning-management features.
-
-### Main product goals
-
-- Bring all batches of the Akkupi Computer Department into one community.
-- Let current students and alumni create profiles and connect.
-- Allow members to share posts, photos, comments, and reactions.
-- Make it easy to discover people and posts by batch or session.
-- Provide basic community moderation and administration.
+**Not** an e-learning platform. No courses, quizzes, study libraries, or LMS features.
 
 ---
 
-## 2. Required Technology
+## 1. Quick Facts (do not re-litigate)
 
-Use this stack unless a real technical or hosting constraint prevents it:
+| Item | Value |
+|---|---|
+| Repo | `akkupi-cse-alliance`, public, description: `Digital community connecting current students, graduates, and alumni of the Akkupi Computer Department.` |
+| Init files | README, Visual Studio `.gitignore`, MIT License |
+| Backend | C# / ASP.NET Core MVC, latest stable installed .NET (this machine: .NET 10) |
+| Frontend | Razor `.cshtml`, HTML5, CSS3, Bootstrap 5, vanilla JS / jQuery if useful |
+| Database | **Local PostgreSQL** for development (this machine: PostgreSQL 18, `localhost:5432`, running). Standard PostgreSQL host in production — same provider, connection string only |
+| ORM | EF Core + Npgsql provider, migrations only |
+| Auth | ASP.NET Core Identity + role-based policies (`Admin`, `Moderator`, `Member`) |
+| Images | Pluggable `IImageStorage`; use a real external service only if credentials exist. Never commit secrets |
+| API | Keep DDD-ish layers API-ready; do **not** build an extra frontend or a separate API project |
 
-- **Backend:** C# and ASP.NET Core MVC, targeting the latest stable supported .NET version available in the environment.
-- **Frontend:** Razor Views (`.cshtml`), HTML5, CSS3, Bootstrap 5, and vanilla JavaScript or jQuery where useful.
-- **Database:** PostgreSQL.
-- **ORM:** Entity Framework Core with the Npgsql PostgreSQL provider.
-- **Authentication:** ASP.NET Core Identity.
-- **Authorization:** Role-based authorization and policies.
-- **Image storage:** Use a suitable external image-storage service only after checking whether its integration and credentials are available. Never commit secrets.
-- **API:** Keep the architecture ready for a future versioned Web API for a mobile app, but do not build an unnecessary separate frontend.
+**Hard bans:** React, TypeScript, Angular, Vue, SPA frameworks, Node.js as the app runtime.
 
-### Strict technology restrictions
+**Database (local PostgreSQL only — no cloud DB service):** Use the running local server (`localhost:5432`); create dev database `aca_dev` if missing. If no server is reachable, start one with Docker (`docker run -d --name aca-pg -e POSTGRES_PASSWORD=... -p 5432:5432 postgres:18`). Keep the password out of source: password-less `DefaultConnection` in `appsettings.Development.json`, real password via `dotnet user-secrets` or `ConnectionStrings__DefaultConnection`. Production uses the same PostgreSQL provider — only the connection string changes. Never invent credentials.
 
-- Do **not** use React.
-- Do **not** use TypeScript.
-- Do **not** use Angular, Vue, or another SPA framework.
-- Do **not** introduce Node.js as the main application runtime.
-- Do not replace ASP.NET Core MVC with a JavaScript full-stack framework.
-
-Use clean, maintainable C# and conventional MVC patterns. Prefer a modular, understandable architecture over unnecessary complexity.
+**Integrations:** Inspect GitHub and Vercel once, up front. Create the repo only if the integration supports it; otherwise report the exact limitation and creation URL. Never fabricate a successful operation. Vercel cannot host this MVC app — recommend a .NET/container host instead.
 
 ---
 
-## 3. Integrations: Inspect Before Acting
+## 2. Speed Protocol (how to be quick)
 
-Check the connected services and available permissions before starting:
-
-### GitHub
-
-1. Check the authenticated GitHub account and available repository permissions.
-2. Create a repository named **`akkupi-cse-alliance`** under the authenticated account if the integration supports repository creation.
-3. Use this description:
-
-   `Digital community connecting current students, graduates, and alumni of the Akkupi Computer Department.`
-
-4. Prefer a public repository unless the owner explicitly chooses private.
-5. Initialize with:
-   - README
-   - Visual Studio `.gitignore`
-   - MIT License
-6. If repository creation is not supported, do not pretend it was created. Report the limitation and provide the exact repository settings and creation URL. Continue with local project scaffolding if possible.
-7. If the repository already exists, inspect it first. Do not overwrite or delete existing work.
-
-### Supabase
-
-1. Check whether Supabase is actually connected and whether a project/database is available.
-2. The application requires PostgreSQL. If a usable Supabase PostgreSQL database is available and appropriate, it may be used as the PostgreSQL host.
-3. If Supabase is not connected or no database is available, do not invent credentials or create fake connection strings.
-4. Keep the application database provider configurable so a standard PostgreSQL host can be substituted later.
-5. Never expose database passwords, API keys, or service-role keys in source code, logs, README files, or commits.
-
-### Vercel
-
-1. Check whether Vercel is connected and inspect its available deployment capabilities.
-2. **Important:** A traditional ASP.NET Core MVC server is not directly deployable to Vercel as a normal .NET web application.
-3. Do not force an incompatible Vercel deployment or convert the application to React/Next.js just to use Vercel.
-4. Recommend a .NET-capable host for the MVC application, such as a suitable container or .NET application hosting service.
-5. Use Vercel only for a genuinely compatible supporting purpose if one is needed. Do not add an unnecessary frontend solely to use Vercel.
+1. **Inspect once.** One pass over: cwd, `dotnet --info`, git status/remote, connected integrations. Do not re-explore the same thing.
+2. **Freeze contracts before fan-out.** Entities, enums, `AppDbContext`, service interfaces, and the layout skeleton are written by you (the orchestrator) *before* any agent starts. Agents never guess a signature.
+3. **One owner per file.** Parallel agents get disjoint path ownership. Shared files are orchestrator-only.
+4. **One migration.** Only the orchestrator runs `dotnet ef migrations add`. Agents request schema changes; they never generate migrations.
+5. **One build gate per wave.** Build → fix forward → next wave. No rewrites, no gold-plating, no features outside §4.
+6. **Blockers in one line.** If something is unavailable, state it, skip it, continue independent work. Never stall the whole build on one integration.
+7. **Timebox:** scaffolding wave ≤ 20 min of agent work; each feature agent ≤ 1 focused pass; no agent reads files outside its ownership.
 
 ---
 
-## 4. Initial MVP Features
+## 3. Delegation Map
 
-Build the project foundation around these features. Prioritize a working, secure foundation over implementing every feature immediately.
+### Wave 0 — Orchestrator (serial, do this yourself)
 
-### Accounts and member profiles
+- Inspect environment + integrations; create/confirm GitHub repo.
+- `dotnet new sln` → `src/ACA.Web` (MVC), `src/ACA.Domain` (classlib), `src/ACA.Application` (classlib), `src/ACA.Infrastructure` (classlib), `tests/ACA.Tests` (xUnit). Wire project references.
+- **Freeze and commit the shared surface:**
+  - `ACA.Domain/Entities/`: `ApplicationUser`, `MemberProfile`, `Batch`, `Post`, `PostImage`, `Comment`, `Reaction`, `Notification`, `Report`; plus `ACA.Domain/Enums/` (`MemberType`, `ReactionType`, `ReportStatus`, `NotificationType`).
+  - `ACA.Infrastructure/Persistence/AppDbContext.cs` (DbSets, keys, indexes, timestamps, delete behavior).
+  - `ACA.Application/Interfaces/`: `IPostService`, `ICommentService`, `IReactionService`, `IProfileService`, `IBatchService`, `INotificationService`, `IImageStorage`, `IReportService`, `IMemberSearchService`.
+  - `ACA.Web/Program.cs` skeleton + `Views/Shared/_Layout.cshtml` skeleton (nav: Feed, Members, Batches, Notifications, Profile; light/dark toggle hook).
+  - Empty `README.md` + setup section stub.
+- Configure the **local** database: ensure PostgreSQL is reachable on `localhost:5432`, create database `aca_dev`, put a password-less `DefaultConnection` in `appsettings.Development.json`, and store the real password with `dotnet user-secrets`.
+- Add packages: `Npgsql.EntityFrameworkCore.PostgreSQL`, `Microsoft.AspNetCore.Identity.EntityFrameworkCore`, `Microsoft.EntityFrameworkCore.Design` (Web/Infrastructure per need).
+- Build once. **Only then** fan out.
 
-- Registration and login.
-- ASP.NET Core Identity.
-- Member profile with name, profile photo, short bio, batch/session, and current status.
-- Member types: Current Student and Alumni.
-- Profile editing with appropriate authorization.
-- Admin-controlled member approval or verification if required.
+### Waves 1–3 — Parallel agents
 
-### Community feed
+| Agent | Owns (paths only it writes) | Scope | Done when |
+|---|---|---|---|
+| **A1 Identity & Members** | `src/ACA.Web/Controllers/{Account,Profile,Members}Controller.cs`, `Views/{Account,Profile,Members}/`, `src/ACA.Infrastructure/Identity/`, `src/ACA.Application/Services/{Profile,Batch}Service.cs` | Register/login/logout, Identity config, role seeding, member profile CRUD, batch/session data, member types, approval flag | Login works, profile edit authorized, roles seeded |
+| **A2 Feed & Images** | `Controllers/PostsController.cs`, `Views/Posts/`, `ACA.Application/Services/PostService.cs`, `ACA.Infrastructure/Services/LocalImageStorage.cs` | Create/edit/delete posts, multi-image attach, size/type validation, newest-first paginated feed | Feed paginates, owner-only edit/delete, uploads validated server-side |
+| **A3 Engagement & Discovery** | `Controllers/{Comments,Reactions,Notifications}Controller.cs`, `Views/{Comments,Notifications}/`, `Services/{Comment,Reaction,Notification}Service.cs` | Likes/reactions (no duplicates), comments + replies, in-app notifications, member search, batch/member-type filters | Reactions idempotent, notifications created, filters + pagination work |
+| **A4 Admin & Moderation** | `Areas/Admin/**` (controllers, views, `_ViewImports`, `_ViewStart`), `Services/ReportService.cs`, admin-only partials | Admin dashboard, member/batch management, report review, content removal, `[Authorize(Roles=...)]` server-side | Non-admin gets 403/redirect; moderation actions auditable |
+| **A5 UI & Theme** | `wwwroot/css/**`, `wwwroot/js/**`, `Views/Shared/_Layout.cshtml` polish, `Views/Home/**` | Bootstrap 5 responsive shell, light/dark theme persistence, shared partials, empty/validation/loading states, no inline CSS blobs | Mobile + desktop usable, theme toggle persists, consistent components |
+| **A6 Tests & Docs** | `tests/ACA.Tests/**`, `README.md`, `docs/**`, `.env.example` | xUnit tests for auth-sensitive rules (ownership, roles, duplicate reactions), README setup/run/migrate, env-var docs, architecture notes | `dotnet test` green, README runnable from scratch |
 
-- Create text posts.
-- Attach one or more images, subject to sensible limits.
-- Edit and delete a member's own posts.
-- Show author, batch/session, post time, and content.
-- Paginated or efficiently loaded feed.
-- Latest posts first.
+**Shared files — orchestrator-only (agents must not edit):**
+`AkkupiCseAlliance.sln`, `src/ACA.Web/Program.cs`, `src/ACA.Infrastructure/Persistence/AppDbContext.cs` + migrations, `src/ACA.Domain/Entities/**`, `ACA.Application/Interfaces/**`, `.gitignore`, `*.csproj`.
 
-### Engagement
+If an agent needs a change in a shared file, it must **not** edit it — it returns a one-line "change request" in its handoff and works around it using the frozen interface.
 
-- Like or react to posts.
-- Comment on posts.
-- Reply to comments if the implementation remains manageable.
-- Prevent duplicate reactions by the same member where appropriate.
+### Wave sequencing
 
-### Discovery
+- **W0:** scaffold + freeze contracts + build (serial).
+- **W1:** A1, A2, A3, A4 launch **in parallel** against frozen contracts.
+- **W2:** orchestrator integrates: register all services in `Program.cs`, run **one** `dotnet ef migrations add InitialCreate`, build, fix integration errors. Then seed data.
+- **W3:** A5 (theme polish) + A6 (tests/docs) in parallel; orchestrator verifies build + tests.
+- **W4:** commit, push (if repo + auth verified), final report.
 
-- Browse and search members.
-- Filter members by batch/session and member type.
-- Filter or browse posts by batch/session where appropriate.
-
-### Notifications
-
-- Basic in-app notifications for reactions and comments.
-- Keep the design extensible for future notification types.
-
-### Administration and moderation
-
-- Admin dashboard.
-- Manage members and batches/sessions.
-- Review reported posts or members.
-- Remove inappropriate content.
-- Use roles such as `Admin`, `Moderator`, and `Member`.
-- Enforce authorization on the server, not only by hiding UI controls.
-
----
-
-## 5. Suggested Architecture
-
-Use a clean and practical solution structure. Avoid creating projects that have no clear purpose.
-
-Suggested starting structure:
+### Subagent prompt template (use verbatim, fill brackets)
 
 ```text
-AkkupiCseAlliance/
-├── src/
-│   ├── ACA.Web/
-│   │   ├── Controllers/
-│   │   ├── Views/
-│   │   ├── wwwroot/
-│   │   ├── Areas/
-│   │   │   └── Admin/
-│   │   ├── Extensions/
-│   │   └── Program.cs
-│   ├── ACA.Application/
-│   │   ├── Interfaces/
-│   │   ├── DTOs/
-│   │   ├── Services/
-│   │   └── Features/
-│   ├── ACA.Domain/
-│   │   ├── Entities/
-│   │   ├── Enums/
-│   │   └── Common/
-│   └── ACA.Infrastructure/
-│       ├── Persistence/
-│       ├── Identity/
-│       ├── Repositories/
-│       └── Services/
-├── tests/
-│   └── ACA.Tests/
-├── docs/
-├── .gitignore
-├── README.md
-└── AkkupiCseAlliance.sln
+You are [AGENT ID] on Akkupi CSE Alliance (ASP.NET Core MVC, .NET 10, EF Core + Npgsql,
+PostgreSQL, Identity, Bootstrap 5; NO React/TS/SPA/Node).
+
+Repo root: [abs path]. Work ONLY in: [owned paths].
+Do NOT edit: Program.cs, AppDbContext.cs, ACA.Domain/Entities/**, ACA.Application/Interfaces/**,
+*.csproj, the .sln, or another agent's folder. Do NOT run `dotnet ef`.
+Frozen contracts you must code against: [paste interface + entity signatures].
+
+Task: [scope bullets from the table].
+Rules: server-side authorization on every action, validate input, anti-forgery on forms,
+paginate lists, no secrets, no N+1 queries. Build your project (dotnet build [csproj]) and
+report only: files added, build result, deviations, change requests (one line each).
 ```
 
-You may adjust the structure if the existing repository or current .NET conventions justify it. Explain meaningful deviations.
+---
 
-### Initial domain entities
+## 4. MVP Scope (build this, nothing more)
 
-Consider these entities and relationships:
+- **Accounts:** registration, login/logout, Identity, profile (name, photo, bio, batch/session, status), Current Student vs Alumni, authorized edit, admin approval flag.
+- **Feed:** text posts, 1+ images with limits, owner edit/delete, author + batch + time, newest-first, paginated.
+- **Engagement:** reactions/likes, comments, replies if cheap, no duplicate reaction per member per post.
+- **Discovery:** browse/search members, filter by batch/session and member type, filter posts by batch.
+- **Notifications:** in-app on reaction/comment, extensible design.
+- **Admin:** dashboard, member/batch management, reported-content review, removal, `Admin`/`Moderator`/`Member` roles enforced server-side.
 
-- `ApplicationUser`
-- `MemberProfile`
-- `Batch`
-- `Post`
-- `PostImage`
-- `Comment`
-- `Reaction`
-- `Notification`
-- `Report`
-
-Use appropriate foreign keys, indexes, constraints, timestamps, and deletion behavior. Avoid storing duplicate information unnecessarily. Do not add every entity blindly if the first implementation phase does not need it.
+**Architecture:** `src/ACA.Web` (Controllers, Views, wwwroot, Areas/Admin, Extensions, Program.cs) → `ACA.Application` (Interfaces, DTOs, Services) → `ACA.Domain` (Entities, Enums, Common) ← `ACA.Infrastructure` (Persistence, Identity, Repositories, Services). Adjust only with a stated reason.
 
 ---
 
-## 6. UI and UX Direction
+## 5. Non-Negotiable Gates
 
-Create a clean, modern, responsive community interface.
-
-- Use Bootstrap 5.
-- Include both light and dark theme support.
-- Make the layout comfortable on desktop and mobile.
-- Use a recognizable community/social-feed layout.
-- Keep navigation simple: Feed, Members, Batches, Notifications, and Profile.
-- Use consistent spacing, typography, buttons, forms, and cards.
-- Provide empty states, validation messages, loading states, and error feedback.
-- Avoid excessive gradients, animations, and decorative UI.
-- Do not use a paid theme or copy a proprietary template.
-- Keep custom CSS organized in separate files; avoid large inline CSS blocks.
+- Build clean; tests green; site runs locally against the local PostgreSQL instance (`aca_dev`), password only from user-secrets/env.
+- Identity for passwords; anti-forgery on all forms; `[Authorize]`/policies on every protected action.
+- Users cannot modify others' content without authority; uploads validated by content type and size.
+- Secrets only via env vars / user secrets; no credentials in Git, logs, README, or seed files.
+- EF Core migrations applied; indexes on feed ordering, member search, batch filtering; no N+1.
+- Pagination everywhere lists can grow; centralized error handling; structured logging.
+- Light + dark theme, responsive, Bootstrap 5, accessible forms, empty states.
 
 ---
 
-## 7. Security and Quality Requirements
+## 6. Definition of Done
 
-- Use ASP.NET Core Identity for password handling and authentication.
-- Validate all input on the server.
-- Use anti-forgery protection for form submissions.
-- Enforce authorization on every protected action.
-- Prevent users from editing or deleting other users' content unless authorized.
-- Validate uploaded file type and size; do not trust file extensions alone.
-- Store secrets in environment variables or user secrets, never in Git.
-- Use EF Core migrations.
-- Add useful database indexes for feed, member search, and batch filtering.
-- Avoid N+1 database queries and load only the data required by each page.
-- Use pagination for feeds and member lists.
-- Add basic logging and centralized error handling.
-- Write tests for important business rules and authorization-sensitive behavior.
+1. Repo exists on GitHub with README + `.gitignore` + MIT — or the exact blocker and creation URL is documented.
+2. Solution + 5 projects build with `dotnet build`.
+3. Identity + role seeding in place; local PostgreSQL `aca_dev` connection works without committed secrets.
+4. Responsive light/dark layout and feed/members/profile/admin screens reachable.
+5. One initial migration exists and `dotnet ef database update` succeeds.
+6. `dotnet test` passes for ownership/authorization/duplicate-reaction rules.
+7. README lets a new developer configure, migrate, and run in three commands.
 
 ---
 
-## 8. Implementation Phases
+## 7. Final Report (≤ 25 lines, no filler)
 
-Work in these phases and keep the repository usable after each phase.
+- GitHub URL (only if verified) or blocker + creation URL.
+- Solution/project tree (one line each).
+- Agents run, in what waves, and what each produced.
+- Features done vs. deferred (explicitly listed).
+- Build result, test count/result, migration status.
+- Setup/run commands + env var **names** (`ConnectionStrings__DefaultConnection`, placeholders only).
+- Deployment recommendation (NOT Vercel for MVC) and its status.
+- Owner action items, numbered.
 
-### Phase 1: Repository and foundation
-
-- Inspect integrations and existing repository contents.
-- Create or confirm the GitHub repository.
-- Create the solution and projects.
-- Configure dependency injection and application settings.
-- Configure PostgreSQL and EF Core.
-- Add ASP.NET Core Identity and roles.
-- Add the first migration.
-- Create a basic responsive layout with light/dark theme.
-- Write setup instructions in README.
-
-### Phase 2: Core community
-
-- Member profile and batch management.
-- Registration/login flow.
-- Create, edit, delete, and view posts.
-- Image upload abstraction and safe validation.
-- Feed pagination.
-
-### Phase 3: Engagement and discovery
-
-- Reactions.
-- Comments and replies.
-- Member search and batch filters.
-- Post filtering.
-
-### Phase 4: Administration
-
-- Admin dashboard.
-- Member moderation.
-- Post reporting and review.
-- Basic in-app notifications.
-
-### Phase 5: Deployment readiness
-
-- Production configuration.
-- Environment-variable documentation.
-- Database migration instructions.
-- Health checks and logging.
-- Deployment recommendation for a .NET-capable host.
-- Deploy only when the target hosting integration supports the application and all required configuration is available.
-
-Do not skip ahead to deployment while the application does not build or run locally.
-
----
-
-## 9. Working Rules for the Agent
-
-1. Start by inspecting the current working directory, installed .NET SDKs, Git status, and connected integrations.
-2. Inspect an existing repository before changing it.
-3. Make changes in small, verifiable steps.
-4. Build the solution after creating the foundation and after significant changes.
-5. Run tests when available.
-6. Fix build errors before moving to the next phase.
-7. Do not fabricate successful GitHub, Supabase, or Vercel operations.
-8. Do not ask for secrets in chat or write them into tracked files.
-9. Do not delete existing files or rewrite project history without explicit approval.
-10. If a required integration action is unavailable, explain exactly what is blocked and continue with independent work.
-11. Do not implement features outside the product scope without a clear reason.
-12. Keep documentation concise and accurate.
-
----
-
-## 10. Final Deliverables
-
-At the end of the work, provide:
-
-- GitHub repository URL, only if successfully created or verified.
-- Summary of the solution structure.
-- Technology and architecture decisions.
-- Features implemented and features not yet implemented.
-- Build and test results.
-- Database setup and migration commands.
-- Local run instructions.
-- Required environment variables, with example placeholder names only.
-- Hosting recommendation and deployment status.
-- Any blocked actions requiring the owner's manual intervention.
-
-### Success criteria
-
-The first milestone is complete when:
-
-- The repository exists or the exact creation limitation is documented.
-- The ASP.NET Core MVC solution and projects are created.
-- The solution builds successfully.
-- PostgreSQL configuration is ready without committed credentials.
-- Identity and role setup are in place.
-- A responsive starter layout with light/dark theme exists.
-- README explains how to configure and run the project.
-
-**Begin by inspecting the available environment and integrations. Then execute Phase 1. Do not stop after producing a plan.**
+**Start now: inspect the environment, execute Wave 0, then fan out. Do not stop at a plan.**
