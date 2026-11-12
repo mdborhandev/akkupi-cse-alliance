@@ -1,58 +1,28 @@
 (function () {
-  'use strict';
-
-  var STORAGE_KEY = 'aca-theme';
   var root = document.documentElement;
   var toggle = document.getElementById('themeToggle');
-  var media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  var meta = document.querySelector('meta[name="theme-color"]');
 
-  function storedTheme() {
-    try {
-      return window.localStorage.getItem(STORAGE_KEY);
-    } catch (error) {
-      return null;
-    }
-  }
-
-  function currentTheme() {
-    return root.getAttribute('data-bs-theme') === 'dark' ? 'dark' : 'light';
-  }
-
-  function updateToggle(theme) {
-    if (!toggle) {
-      return;
-    }
-
-    var isDark = theme === 'dark';
-    toggle.textContent = isDark ? '☀' : '☾';
-    toggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
-    toggle.setAttribute('title', isDark ? 'Switch to light theme' : 'Switch to dark theme');
-    toggle.setAttribute('aria-label', isDark ? 'Switch to light color theme' : 'Switch to dark color theme');
+  function sync() {
+    var dark = root.getAttribute('data-bs-theme') === 'dark';
+    if (meta) { meta.setAttribute('content', dark ? '#0c0c11' : '#f5f5fa'); }
+    if (!toggle) { return; }
+    toggle.setAttribute('aria-pressed', dark ? 'true' : 'false');
+    toggle.setAttribute('title', dark ? 'Switch to light theme' : 'Switch to dark theme');
+    toggle.setAttribute('aria-label', dark ? 'Switch to light color theme' : 'Switch to dark color theme');
   }
 
   function apply(theme) {
     root.setAttribute('data-bs-theme', theme);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, theme);
-    } catch (error) {
-      /* Private browsing can block storage; the visual change still applies. */
-    }
-    updateToggle(theme);
+    try { localStorage.setItem('aca-theme', theme); } catch (e) { }
+    sync();
   }
 
   if (toggle) {
-    updateToggle(currentTheme());
     toggle.addEventListener('click', function () {
-      apply(currentTheme() === 'dark' ? 'light' : 'dark');
+      apply(root.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark');
     });
   }
 
-  // Follow the operating-system preference only while the visitor has not picked a theme.
-  if (media && media.addEventListener) {
-    media.addEventListener('change', function (event) {
-      if (!storedTheme()) {
-        apply(event.matches ? 'dark' : 'light');
-      }
-    });
-  }
+  sync();
 })();

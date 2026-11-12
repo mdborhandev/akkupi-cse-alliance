@@ -5,61 +5,83 @@
     var batchQuery = batchId.HasValue ? $"&batchId={batchId.Value}" : string.Empty;
     var feedUrl = Url.Action("Index", "Posts") ?? "/Posts";
     var isSignedIn = User.Identity?.IsAuthenticated == true;
+    var accountName = User.Identity?.Name ?? string.Empty;
+    var accountSource = accountName.Contains('@') ? accountName.Split('@')[0] : accountName;
+    var accountInitial = accountSource.Length == 0 ? "?" : accountSource[..1].ToUpperInvariant();
 }
 
-<div class="aca-feed">
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-        <div>
-            <h1 class="h4 fw-semibold mb-0">Community feed</h1>
-            <p class="aca-muted small mb-0">Latest posts from students and alumni.</p>
+<div class="aca-layout">
+    <div class="aca-feed">
+        <div class="aca-page-head">
+            <div>
+                <span class="aca-eyebrow"><partial name="_Icon" model="@("spark")" /> Community</span>
+                <h1>Feed</h1>
+                <p class="aca-page-sub">Latest posts from students and alumni across every batch.</p>
+            </div>
+            <div class="d-flex gap-2">
+                @if (isSignedIn)
+                {
+                    <a class="btn btn-primary" asp-action="Create">
+                        <partial name="_Icon" model="@("plus")" /> Share something
+                    </a>
+                }
+                else
+                {
+                    <a class="btn btn-primary" asp-controller="Account" asp-action="Register">Join the community</a>
+                }
+            </div>
         </div>
+
         @if (isSignedIn)
         {
-            <a class="btn btn-primary" asp-action="Create">Share something</a>
+            <div class="aca-composer">
+                <span class="aca-avatar" aria-hidden="true">@accountInitial</span>
+                <a class="aca-composer-input flex-grow-1" asp-action="Create">Share something with the community…</a>
+                <div class="aca-composer-actions">
+                    <a class="aca-icon-btn" asp-action="Create" title="Share a photo post" aria-label="Share a photo post">
+                        <partial name="_Icon" model="@("image")" />
+                    </a>
+                </div>
+            </div>
+        }
+
+        @if (Model.Items.Count == 0)
+        {
+            <div class="aca-empty">
+                <div class="aca-empty-icon"><partial name="_Icon" model="@("spark")" /></div>
+                <p class="mb-1 fw-semibold text-body">No posts yet</p>
+                <p class="mb-3 small">Be the first to share something with the community.</p>
+                @if (isSignedIn)
+                {
+                    <a class="btn btn-sm btn-primary" asp-action="Create">Write the first post</a>
+                }
+            </div>
         }
         else
         {
-            <a class="btn btn-primary" asp-controller="Account" asp-action="Login">Log in to post</a>
-        }
-    </div>
-
-    @if (Model.Items.Count == 0)
-    {
-        <div class="aca-empty">
-            <p class="mb-1 fw-semibold">No posts yet</p>
-            <p class="mb-0 small">Be the first to share something with the community.</p>
-        </div>
-    }
-    else
-    {
-        @foreach (var post in Model.Items)
-        {
-            <article class="card mb-3">
-                <div class="card-body">
-                    <div class="d-flex align-items-center gap-2">
+            @foreach (var post in Model.Items)
+            {
+                <article class="aca-post">
+                    <header class="aca-post-head">
                         @if (!string.IsNullOrWhiteSpace(post.AuthorPhotoUrl))
                         {
-                            <img src="@post.AuthorPhotoUrl" alt="" class="aca-avatar flex-shrink-0" />
+                            <img src="@post.AuthorPhotoUrl" alt="" class="aca-avatar" loading="lazy" />
                         }
                         else
                         {
-                            <span class="aca-avatar d-inline-flex align-items-center justify-content-center fw-semibold text-body-secondary flex-shrink-0">
-                                @Initial(post.AuthorName)
-                            </span>
+                            <span class="aca-avatar" aria-hidden="true">@Initial(post.AuthorName)</span>
                         }
-                        <div class="flex-grow-1">
-                            <div class="d-flex flex-wrap align-items-center gap-2">
-                                <span class="fw-semibold">@DisplayName(post.AuthorName)</span>
+                        <div class="aca-post-who">
+                            <div class="aca-post-name">@DisplayName(post.AuthorName)</div>
+                            <div class="aca-post-meta">
                                 @if (!string.IsNullOrWhiteSpace(post.BatchName))
                                 {
-                                    <span class="badge text-bg-secondary">@post.BatchName</span>
+                                    <span class="aca-chip">@post.BatchName</span>
                                 }
-                                @if (post.MemberType == MemberType.Alumni)
-                                {
-                                    <span class="badge text-bg-info">Alumni</span>
-                                }
-                            </div>
-                            <div class="small aca-muted">
+                                <span class="aca-chip @(post.MemberType == MemberType.Alumni ? "aca-chip--alumni" : "aca-chip--student")">
+                                    @(post.MemberType == MemberType.Alumni ? "Alumni" : "Student")
+                                </span>
+                                <span aria-hidden="true">·</span>
                                 <span title="@post.CreatedAtUtc.ToString("u")">@TimeAgo(post.CreatedAtUtc)</span>
                                 @if (post.IsEdited)
                                 {
@@ -67,71 +89,108 @@
                                 }
                             </div>
                         </div>
-                    </div>
+                    </header>
 
-                    <div class="aca-post-body mt-3">@post.Content</div>
+                    <div class="aca-post-content">@post.Content</div>
 
                     @if (post.Images.Count > 0)
                     {
-                        var imageColumn = post.Images.Count == 1 ? "col-12" : post.Images.Count == 2 ? "col-6" : "col-4";
-                        <div class="row g-2 mt-1">
+                        <div class="aca-post-media" data-count="@post.Images.Count">
                             @foreach (var image in post.Images)
                             {
-                                <div class="@imageColumn">
-                                    <a asp-action="Details" asp-route-id="@post.Id"
-                                       class="d-block ratio ratio-4x3 rounded overflow-hidden border">
-                                        <img src="@image.Url" alt="Image attached to a post by @DisplayName(post.AuthorName)"
-                                             class="w-100 h-100 object-fit-cover" loading="lazy" />
-                                    </a>
-                                </div>
+                                <a asp-action="Details" asp-route-id="@post.Id" class="aca-media-item">
+                                    <img src="@image.Url" alt="Image attached to a post by @DisplayName(post.AuthorName)"
+                                         loading="lazy" />
+                                </a>
                             }
                         </div>
                     }
 
-                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3">
-                        <span class="small aca-muted">
-                            @post.ReactionCount @(post.ReactionCount == 1 ? "reaction" : "reactions")
-                            · @post.CommentCount @(post.CommentCount == 1 ? "comment" : "comments")
-                        </span>
-                        <a class="btn btn-sm btn-outline-secondary" asp-action="Details" asp-route-id="@post.Id">
-                            Open discussion
+                    <footer class="aca-post-actions">
+                        <a class="aca-action" asp-action="Details" asp-route-id="@post.Id" aria-label="@post.ReactionCount reactions">
+                            <partial name="_Icon" model="@("heart")" />
+                            <span>@post.ReactionCount</span>
                         </a>
-                    </div>
-                </div>
-            </article>
-        }
+                        <a class="aca-action" asp-action="Details" asp-route-id="@post.Id" aria-label="@post.CommentCount comments">
+                            <partial name="_Icon" model="@("message")" />
+                            <span>@post.CommentCount</span>
+                        </a>
+                        <a class="aca-action aca-action--end aca-action--accent" asp-action="Details" asp-route-id="@post.Id">
+                            Open discussion <partial name="_Icon" model="@("chevron-right")" />
+                        </a>
+                    </footer>
+                </article>
+            }
 
-        @if (Model.TotalPages > 1)
-        {
-            <nav aria-label="Feed pagination">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item @(Model.HasPrevious ? string.Empty : "disabled")">
-                        @if (Model.HasPrevious)
-                        {
-                            <a class="page-link" href="@($"{feedUrl}?page={Model.Page - 1}{batchQuery}")">Previous</a>
-                        }
-                        else
-                        {
-                            <span class="page-link">Previous</span>
-                        }
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link">Page @Model.Page of @Model.TotalPages</span>
-                    </li>
-                    <li class="page-item @(Model.HasNext ? string.Empty : "disabled")">
-                        @if (Model.HasNext)
-                        {
-                            <a class="page-link" href="@($"{feedUrl}?page={Model.Page + 1}{batchQuery}")">Next</a>
-                        }
-                        else
-                        {
-                            <span class="page-link">Next</span>
-                        }
-                    </li>
-                </ul>
-            </nav>
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="aca-pagination" aria-label="Feed pagination">
+                    @if (Model.HasPrevious)
+                    {
+                        <a class="aca-page" href="@($"{feedUrl}?page={Model.Page - 1}{batchQuery}")" rel="prev">
+                            <partial name="_Icon" model="@("chevron-left")" /> Newer
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="aca-page aca-page--disabled"><partial name="_Icon" model="@("chevron-left")" /> Newer</span>
+                    }
+                    <span class="aca-page-count">Page @Model.Page of @Model.TotalPages</span>
+                    @if (Model.HasNext)
+                    {
+                        <a class="aca-page" href="@($"{feedUrl}?page={Model.Page + 1}{batchQuery}")" rel="next">
+                            Older <partial name="_Icon" model="@("chevron-right")" />
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="aca-page aca-page--disabled">Older <partial name="_Icon" model="@("chevron-right")" /></span>
+                    }
+                </nav>
+            }
         }
-    }
+    </div>
+
+    <aside class="aca-rail" aria-label="Community information">
+        <section class="aca-rail-card">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="aca-brand-mark" aria-hidden="true">ACA</span>
+                <div>
+                    <div class="fw-semibold aca-rail-brand">Akkupi CSE Alliance</div>
+                    <div class="aca-faint aca-rail-brand-sub">Connecting generations</div>
+                </div>
+            </div>
+            <p class="aca-rail-text">
+                A private-feeling space for current students, graduates, and alumni of the Akkupi
+                Computer Department — every batch, one community.
+            </p>
+        </section>
+
+        <section class="aca-rail-card">
+            <div class="aca-rail-title">Explore</div>
+            <ul class="aca-rail-list">
+                <li><a class="aca-rail-link" asp-controller="Batches" asp-action="Index"><partial name="_Icon" model="@("layers")" /> Browse batches</a></li>
+                <li><a class="aca-rail-link" asp-controller="Members" asp-action="Index"><partial name="_Icon" model="@("users")" /> Find members</a></li>
+                @if (isSignedIn)
+                {
+                    <li><a class="aca-rail-link" asp-controller="Profile" asp-action="Index"><partial name="_Icon" model="@("user")" /> My profile</a></li>
+                }
+                else
+                {
+                    <li><a class="aca-rail-link" asp-controller="Account" asp-action="Register"><partial name="_Icon" model="@("user")" /> Create an account</a></li>
+                }
+            </ul>
+        </section>
+
+        <section class="aca-rail-card">
+            <div class="aca-rail-title">House rules</div>
+            <ul class="aca-rail-text ps-3 mb-0 d-flex flex-column gap-1">
+                <li>Be respectful to every batch and generation.</li>
+                <li>No spam, harassment, or irrelevant advertising.</li>
+                <li>Report content that breaks these rules.</li>
+            </ul>
+        </section>
+    </aside>
 </div>
 
 @functions {

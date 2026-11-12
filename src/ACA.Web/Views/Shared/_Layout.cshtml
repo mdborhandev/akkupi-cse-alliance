@@ -1,14 +1,18 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
 @{
-    var displayName = string.IsNullOrWhiteSpace(User.Identity?.Name) ? "Member" : User.Identity!.Name!;
-    var nameSource = displayName.Contains('@') ? displayName.Split('@')[0] : displayName;
-    var nameParts = nameSource.Split(new[] { ' ', '.', '_', '-' }, StringSplitOptions.RemoveEmptyEntries);
+    var accountName = string.IsNullOrWhiteSpace(User.Identity?.Name) ? "Member" : User.Identity!.Name!;
+    var displayName = accountName.Contains('@') ? accountName.Split('@')[0] : accountName;
+    var nameParts = displayName.Split(new[] { ' ', '.', '_', '-' }, StringSplitOptions.RemoveEmptyEntries);
     var userInitials = nameParts.Length == 0 ? "?" : nameParts[0].Substring(0, 1).ToUpperInvariant();
     if (nameParts.Length > 1)
     {
         userInitials += nameParts[1].Substring(0, 1).ToUpperInvariant();
     }
+
+    var isSignedIn = SignInManager.IsSignedIn(User);
+    var isStaff = User.IsInRole("Admin") || User.IsInRole("Moderator");
+    var searchQuery = Context.Request.Query["q"].ToString();
 }
 @functions {
     private string CurrentController()
@@ -18,7 +22,13 @@
         => string.Equals(CurrentController(), controller, StringComparison.OrdinalIgnoreCase);
 
     private string NavClass(string controller)
-        => IsController(controller) ? "nav-link active" : "nav-link";
+        => IsController(controller) ? "aca-nav-link active" : "aca-nav-link";
+
+    private string TabClass(string controller)
+        => IsController(controller) ? "aca-tab active" : "aca-tab";
+
+    private string MenuClass(string controller)
+        => IsController(controller) ? "aca-menu-link active" : "aca-menu-link";
 
     private string AriaCurrent(string controller)
         => IsController(controller) ? "page" : "false";
@@ -28,11 +38,16 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f5f5fa" />
     <title>@ViewData["Title"] · ACA</title>
     <script>
         (function () {
             var saved = null;
             try { saved = localStorage.getItem('aca-theme'); } catch (e) { }
+            try {
+                var qp = new URLSearchParams(window.location.search).get('theme');
+                if (qp === 'dark' || qp === 'light') { saved = qp; }
+            } catch (e) { }
             if (!saved) { saved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
             document.documentElement.setAttribute('data-bs-theme', saved);
         })();
@@ -43,90 +58,125 @@
 </head>
 <body class="d-flex flex-column min-vh-100">
 <a class="aca-skip-link" href="#main-content">Skip to content</a>
-<header>
-    <nav class="navbar navbar-expand-lg border-bottom app-navbar sticky-top">
-        <div class="container">
-            <a class="navbar-brand fw-semibold" asp-controller="Home" asp-action="Index">
-                <span class="brand-mark">ACA</span>
-                <span class="d-none d-sm-inline text-body-secondary fw-normal small ms-1">Akkupi CSE Alliance</span>
+
+<header class="aca-header">
+    <div class="aca-header-inner">
+        <a class="aca-brand" asp-controller="Home" asp-action="Index" aria-label="Akkupi CSE Alliance — home">
+            <span class="aca-brand-mark" aria-hidden="true">ACA</span>
+            <span class="aca-brand-text">Akkupi CSE Alliance</span>
+        </a>
+
+        <nav class="aca-nav" aria-label="Primary">
+            <a class="@NavClass("Posts")" aria-current="@AriaCurrent("Posts")" asp-controller="Posts" asp-action="Index">
+                <partial name="_Icon" model="@("spark")" /> Feed
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
-                    aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
+            <a class="@NavClass("Members")" aria-current="@AriaCurrent("Members")" asp-controller="Members" asp-action="Index">
+                <partial name="_Icon" model="@("users")" /> Members
+            </a>
+            <a class="@NavClass("Batches")" aria-current="@AriaCurrent("Batches")" asp-controller="Batches" asp-action="Index">
+                <partial name="_Icon" model="@("layers")" /> Batches
+            </a>
+        </nav>
+
+        <form class="aca-search d-none d-md-block" role="search" asp-controller="Members" asp-action="Index" method="get">
+            <partial name="_Icon" model="@("search")" />
+            <input type="search" name="q" value="@searchQuery" placeholder="Search members…" aria-label="Search members" />
+        </form>
+
+        <div class="aca-actions">
+            <button type="button" class="aca-icon-btn" id="themeToggle"
+                    title="Switch to dark theme" aria-label="Switch color theme" aria-pressed="false">
+                <span class="aca-theme-sun"><partial name="_Icon" model="@("sun")" /></span>
+                <span class="aca-theme-moon"><partial name="_Icon" model="@("moon")" /></span>
             </button>
-            <div class="collapse navbar-collapse" id="mainNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="@NavClass("Posts")" aria-current="@AriaCurrent("Posts")"
-                           asp-controller="Posts" asp-action="Index">Feed</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="@NavClass("Members")" aria-current="@AriaCurrent("Members")"
-                           asp-controller="Members" asp-action="Index">Members</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="@NavClass("Batches")" aria-current="@AriaCurrent("Batches")"
-                           asp-controller="Batches" asp-action="Index">Batches</a>
-                    </li>
-                </ul>
-                <ul class="navbar-nav align-items-lg-center gap-lg-1">
-                    <li class="nav-item">
-                        <button type="button" class="btn btn-sm btn-outline-secondary aca-theme-toggle" id="themeToggle"
-                                title="Switch to dark theme" aria-label="Switch to dark color theme" aria-pressed="false">◐</button>
-                    </li>
-                    @if (SignInManager.IsSignedIn(User))
-                    {
-                        <li class="nav-item">
-                            <a class="@NavClass("Notifications") position-relative d-inline-flex align-items-center gap-1"
-                               aria-current="@AriaCurrent("Notifications")"
-                               asp-controller="Notifications" asp-action="Index">
-                                Notifications
-                                <span class="badge rounded-pill text-bg-danger position-absolute top-0 start-100 translate-middle d-none aca-notification-badge"
-                                      id="notificationBadge" aria-hidden="true"
-                                      data-endpoint="@(Url.Action("UnreadCount", "Notifications") ?? "/Notifications/UnreadCount")">0</span>
-                            </a>
+
+            @if (isSignedIn)
+            {
+                <a class="aca-icon-btn" asp-controller="Notifications" asp-action="Index" aria-label="Notifications">
+                    <partial name="_Icon" model="@("bell")" />
+                    <span class="aca-badge-dot d-none" id="notificationBadge" aria-hidden="true"
+                          data-endpoint="@(Url.Action("UnreadCount", "Notifications") ?? "/Notifications/UnreadCount")">0</span>
+                </a>
+                <div class="dropdown">
+                    <button class="aca-user-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                            aria-label="Account menu">
+                        <span class="aca-avatar aca-avatar-sm" aria-hidden="true">@userInitials</span>
+                        <span class="aca-user-name" title="@accountName">@displayName</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        <li class="px-3 pt-2 pb-1">
+                            <div class="small fw-semibold text-truncate aca-dropdown-name" title="@accountName">@displayName</div>
+                            <div class="small aca-muted">Signed in</div>
                         </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button"
-                               data-bs-toggle="dropdown" aria-expanded="false">
-                                <span class="aca-avatar aca-avatar-sm aca-avatar-initials flex-shrink-0" aria-hidden="true">@userInitials</span>
-                                <span class="aca-nav-user-name" title="@displayName">@displayName</span>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index">My profile</a></li>
-                                @if (User.IsInRole("Admin") || User.IsInRole("Moderator"))
-                                {
-                                    <li>
-                                        <a class="dropdown-item @(IsController("Dashboard") ? "active" : string.Empty)"
-                                           aria-current="@AriaCurrent("Dashboard")"
-                                           asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Admin</a>
-                                    </li>
-                                }
-                                <li><hr class="dropdown-divider" /></li>
-                                <li>
-                                    <form asp-controller="Account" asp-action="Logout" method="post" class="px-3 py-1">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-link p-0 text-decoration-none">Log out</button>
-                                    </form>
-                                </li>
-                            </ul>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index">My profile</a></li>
+                        <li><a class="dropdown-item" asp-controller="Notifications" asp-action="Index">Notifications</a></li>
+                        @if (isStaff)
+                        {
+                            <li>
+                                <a class="dropdown-item" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Admin dashboard</a>
+                            </li>
+                        }
+                        <li><hr class="dropdown-divider" /></li>
+                        <li>
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="px-3 py-1">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-secondary w-100">Log out</button>
+                            </form>
                         </li>
-                    }
-                    else
-                    {
-                        <li class="nav-item">
-                            <a class="@NavClass("Account")" aria-current="@AriaCurrent("Account")"
-                               asp-controller="Account" asp-action="Login">Log in</a>
-                        </li>
-                        <li class="nav-item"><a class="btn btn-sm btn-primary ms-lg-2" asp-controller="Account" asp-action="Register">Join</a></li>
-                    }
-                </ul>
-            </div>
+                    </ul>
+                </div>
+            }
+            else
+            {
+                <a class="btn btn-sm btn-outline-secondary d-none d-lg-inline-flex" asp-controller="Account" asp-action="Login">Log in</a>
+                <a class="btn btn-sm btn-primary" asp-controller="Account" asp-action="Register">Join</a>
+            }
+
+            <button class="aca-icon-btn d-lg-none" type="button" data-bs-toggle="offcanvas"
+                    data-bs-target="#mobileNav" aria-controls="mobileNav" aria-label="Open menu">
+                <partial name="_Icon" model="@("menu")" />
+            </button>
         </div>
-    </nav>
+    </div>
 </header>
 
-<main id="main-content" class="container py-4 flex-grow-1" tabindex="-1">
+<div class="offcanvas offcanvas-end aca-mobile-menu" tabindex="-1" id="mobileNav" aria-labelledby="mobileNavLabel">
+    <div class="offcanvas-header border-bottom">
+        <span class="aca-brand" id="mobileNavLabel">
+            <span class="aca-brand-mark" aria-hidden="true">ACA</span>
+            <span class="aca-brand-text">Akkupi CSE Alliance</span>
+        </span>
+        <button type="button" class="aca-icon-btn" data-bs-dismiss="offcanvas" aria-label="Close menu">
+            <partial name="_Icon" model="@("x")" />
+        </button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column gap-1">
+        <form class="aca-search aca-search--full d-md-none w-100 mb-2" role="search" asp-controller="Members" asp-action="Index" method="get">
+            <partial name="_Icon" model="@("search")" />
+            <input type="search" name="q" value="@searchQuery" placeholder="Search members…" aria-label="Search members" />
+        </form>
+        <a class="@MenuClass("Posts")" asp-controller="Posts" asp-action="Index"><partial name="_Icon" model="@("spark")" /> Feed</a>
+        <a class="@MenuClass("Members")" asp-controller="Members" asp-action="Index"><partial name="_Icon" model="@("users")" /> Members</a>
+        <a class="@MenuClass("Batches")" asp-controller="Batches" asp-action="Index"><partial name="_Icon" model="@("layers")" /> Batches</a>
+        @if (isSignedIn)
+        {
+            <a class="@MenuClass("Notifications")" asp-controller="Notifications" asp-action="Index"><partial name="_Icon" model="@("bell")" /> Notifications</a>
+            <a class="@MenuClass("Profile")" asp-controller="Profile" asp-action="Index"><partial name="_Icon" model="@("user")" /> My profile</a>
+            @if (isStaff)
+            {
+                <a class="@MenuClass("Dashboard")" asp-area="Admin" asp-controller="Dashboard" asp-action="Index"><partial name="_Icon" model="@("shield")" /> Admin dashboard</a>
+            }
+        }
+        else
+        {
+            <hr class="my-2" />
+            <a class="btn btn-outline-secondary" asp-controller="Account" asp-action="Login">Log in</a>
+        }
+    </div>
+</div>
+
+<main id="main-content" class="aca-main" tabindex="-1">
     @if (TempData["Success"] is string success)
     {
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -144,14 +194,42 @@
     @RenderBody()
 </main>
 
-<footer class="app-footer border-top py-4 mt-auto">
-    <div class="container d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 gap-sm-3 small">
+<nav class="aca-bottom-nav" aria-label="Primary mobile">
+    <a class="@TabClass("Posts")" aria-current="@AriaCurrent("Posts")" asp-controller="Posts" asp-action="Index">
+        <partial name="_Icon" model="@("spark")" /><span>Feed</span>
+    </a>
+    <a class="@TabClass("Members")" aria-current="@AriaCurrent("Members")" asp-controller="Members" asp-action="Index">
+        <partial name="_Icon" model="@("users")" /><span>Members</span>
+    </a>
+    <a class="@TabClass("Batches")" aria-current="@AriaCurrent("Batches")" asp-controller="Batches" asp-action="Index">
+        <partial name="_Icon" model="@("layers")" /><span>Batches</span>
+    </a>
+    @if (isSignedIn)
+    {
+        <a class="@TabClass("Notifications")" aria-current="@AriaCurrent("Notifications")" asp-controller="Notifications" asp-action="Index">
+            <partial name="_Icon" model="@("bell")" /><span>Alerts</span>
+        </a>
+    }
+    else
+    {
+        <a class="@TabClass("Account")" asp-controller="Account" asp-action="Register">
+            <partial name="_Icon" model="@("user")" /><span>Join</span>
+        </a>
+    }
+</nav>
+
+<footer class="aca-footer">
+    <div class="aca-footer-inner">
         <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-1 gap-sm-2">
-            <span class="fw-semibold text-body">Akkupi CSE Alliance</span>
-            <span class="aca-muted d-none d-sm-inline" aria-hidden="true">·</span>
-            <span class="aca-muted">Connecting Students, Alumni &amp; Generations.</span>
+            <span class="aca-footer-brand">Akkupi CSE Alliance</span>
+            <span class="aca-faint d-none d-sm-inline" aria-hidden="true">·</span>
+            <span>Connecting Students, Alumni &amp; Generations.</span>
         </div>
-        <span class="aca-muted">© @DateTime.UtcNow.Year Akkupi CSE Alliance</span>
+        <div class="d-flex align-items-center gap-3">
+            <a class="text-reset" asp-controller="Batches" asp-action="Index">Batches</a>
+            <a class="text-reset" asp-controller="Members" asp-action="Index">Members</a>
+            <span>© @DateTime.UtcNow.Year ACA</span>
+        </div>
     </div>
 </footer>
 
