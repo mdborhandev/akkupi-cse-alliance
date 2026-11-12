@@ -4,58 +4,65 @@
     var hasFilters = !string.IsNullOrWhiteSpace(Model.Query) || Model.BatchId.HasValue || Model.MemberType.HasValue;
 }
 
-<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+<div class="aca-page-head">
     <div>
-        <h1 class="h4 fw-semibold mb-1">Members</h1>
-        <p class="aca-muted mb-0 small">Find students and alumni across every batch.</p>
+        <span class="aca-eyebrow"><partial name="_Icon" model="@("users")" /> Directory</span>
+        <h1>Members</h1>
+        <p class="aca-page-sub">Find students and alumni across every batch.</p>
     </div>
-    <span class="aca-muted small">@Model.Results.TotalCount member@(Model.Results.TotalCount == 1 ? "" : "s")</span>
+    <span class="aca-count-pill">@Model.Results.TotalCount</span>
 </div>
 
-<form method="get" asp-action="Index" class="card card-body bg-body-tertiary border-0 mb-4">
-    <div class="row g-2 align-items-end">
-        <div class="col-12 col-md-5">
-            <label class="form-label small aca-muted" for="memberSearch">Search by name</label>
-            <input class="form-control" id="memberSearch" name="q" value="@Model.Query" placeholder="e.g. Rahman" />
+<form method="get" asp-action="Index" class="aca-filter-bar" role="search">
+    <div class="aca-filter-field aca-filter-field--grow">
+        <label class="form-label" for="memberSearch">Search</label>
+        <div class="aca-input-icon">
+            <partial name="_Icon" model="@("search")" />
+            <input class="form-control" id="memberSearch" name="q" value="@Model.Query" placeholder="Search by name…" />
         </div>
-        <div class="col-12 col-sm-6 col-md-3">
-            <label class="form-label small aca-muted" for="memberBatch">Batch</label>
-            <select class="form-select" id="memberBatch" name="batchId">
-                <option value="">All batches</option>
-                @foreach (var batch in Model.Batches)
-                {
-                    <option value="@batch.Id" selected="@(Model.BatchId == batch.Id)">Batch @batch.BatchNo — @batch.Name (@batch.Session)</option>
-                }
-            </select>
-        </div>
-        <div class="col-12 col-sm-6 col-md-2">
-            <label class="form-label small aca-muted" for="memberType">Type</label>
-            <select class="form-select" id="memberType" name="memberType">
-                <option value="">All types</option>
-                <option value="CurrentStudent" selected="@(Model.MemberType == MemberType.CurrentStudent)">Current student</option>
-                <option value="Alumni" selected="@(Model.MemberType == MemberType.Alumni)">Alumni</option>
-            </select>
-        </div>
-        <div class="col-12 col-md-2 d-flex gap-2">
-            <button type="submit" class="btn btn-primary flex-grow-1">Search</button>
-            @if (hasFilters)
+    </div>
+    <div class="aca-filter-field">
+        <label class="form-label" for="memberBatch">Batch</label>
+        <select class="form-select" id="memberBatch" name="batchId">
+            <option value="">All batches</option>
+            @foreach (var batch in Model.Batches)
             {
-                <a class="btn btn-outline-secondary" asp-action="Index" title="Clear filters">Clear</a>
+                <option value="@batch.Id" selected="@(Model.BatchId == batch.Id)">Batch @batch.BatchNo — @batch.Name (@batch.Session)</option>
             }
-        </div>
+        </select>
+    </div>
+    <div class="aca-filter-field">
+        <label class="form-label" for="memberType">Type</label>
+        <select class="form-select" id="memberType" name="memberType">
+            <option value="">All types</option>
+            <option value="CurrentStudent" selected="@(Model.MemberType == MemberType.CurrentStudent)">Current student</option>
+            <option value="Alumni" selected="@(Model.MemberType == MemberType.Alumni)">Alumni</option>
+        </select>
+    </div>
+    <div class="aca-filter-actions">
+        <button type="submit" class="btn btn-primary">Apply</button>
+        @if (hasFilters)
+        {
+            <a class="btn btn-outline-secondary" asp-action="Index" title="Clear filters">Reset</a>
+        }
     </div>
 </form>
 
 @if (Model.Results.Items.Count == 0)
 {
     <div class="aca-empty">
-        <p class="fw-semibold mb-1">No members found</p>
-        <p class="mb-0 small">Try a different name, or clear the batch and type filters.</p>
+        <div class="aca-empty-icon"><partial name="_Icon" model="@("users")" /></div>
+        <p class="fw-semibold text-body mb-1">No members found</p>
+        <p class="mb-3 small">Try a different name, or clear the batch and type filters.</p>
+        @if (hasFilters)
+        {
+            <a class="btn btn-sm btn-outline-secondary" asp-action="Index">Clear filters</a>
+        }
     </div>
 }
 else
 {
-    <div class="row g-3">
+    <div class="aca-member-grid">
         @foreach (var member in Model.Results.Items)
         {
             var nameParts = (member.FullName ?? string.Empty).Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -63,32 +70,34 @@ else
             if (nameParts.Length > 0) initials += nameParts[0][0];
             if (nameParts.Length > 1) initials += nameParts[1][0];
             initials = initials.Length == 0 ? "?" : initials.ToUpperInvariant();
-            var memberTypeLabel = member.MemberType == MemberType.Alumni ? "Alumni" : "Current student";
 
-            <div class="col-12 col-sm-6 col-lg-4">
-                <div class="card h-100">
-                    <div class="card-body d-flex gap-3">
-                        @if (!string.IsNullOrWhiteSpace(member.ProfilePhotoUrl))
+            <a class="aca-member-card" asp-action="Details" asp-route-id="@member.UserId">
+                @if (!string.IsNullOrWhiteSpace(member.ProfilePhotoUrl))
+                {
+                    <img src="@member.ProfilePhotoUrl" alt="" class="aca-avatar aca-avatar-lg" loading="lazy" />
+                }
+                else
+                {
+                    <span class="aca-avatar aca-avatar-lg" aria-hidden="true">@initials</span>
+                }
+                <span class="aca-member-info">
+                    <span class="aca-member-name">@member.FullName</span>
+                    <span class="aca-member-meta">
+                        @if (!string.IsNullOrWhiteSpace(member.BatchName))
                         {
-                            <img src="@member.ProfilePhotoUrl" alt="@member.FullName" class="aca-avatar" />
+                            <span class="aca-chip">@member.BatchName</span>
                         }
-                        else
-                        {
-                            <div class="aca-avatar d-inline-flex align-items-center justify-content-center fw-semibold text-body-secondary" aria-hidden="true">@initials</div>
-                        }
-
-                        <div class="flex-grow-1 overflow-hidden">
-                            <a class="fw-semibold text-decoration-none d-block text-truncate" asp-action="Details" asp-route-id="@member.UserId">@member.FullName</a>
-                            <div class="small aca-muted text-truncate">@(string.IsNullOrWhiteSpace(member.BatchName) ? "No batch" : member.BatchName)</div>
-                            <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis mt-2">@memberTypeLabel</span>
-                            @if (!string.IsNullOrWhiteSpace(member.CurrentStatus))
-                            {
-                                <div class="small mt-2 text-truncate">@member.CurrentStatus</div>
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        <span class="aca-chip @(member.MemberType == MemberType.Alumni ? "aca-chip--alumni" : "aca-chip--student")">
+                            @(member.MemberType == MemberType.Alumni ? "Alumni" : "Student")
+                        </span>
+                    </span>
+                    @if (!string.IsNullOrWhiteSpace(member.CurrentStatus))
+                    {
+                        <span class="aca-member-status">@member.CurrentStatus</span>
+                    }
+                </span>
+                <span class="aca-member-chevron" aria-hidden="true"><partial name="_Icon" model="@("chevron-right")" /></span>
+            </a>
         }
     </div>
 
@@ -98,40 +107,38 @@ else
         var firstPage = Math.Max(1, currentPage - 2);
         var lastPage = Math.Min(Model.Results.TotalPages, currentPage + 2);
 
-        <nav aria-label="Member pagination" class="mt-4">
-            <ul class="pagination pagination-sm justify-content-center flex-wrap">
-                <li class="page-item @(Model.Results.HasPrevious ? string.Empty : "disabled")">
-                    @if (Model.Results.HasPrevious)
-                    {
-                        <a class="page-link" asp-action="Index" asp-route-q="@Model.Query" asp-route-batchId="@Model.BatchId"
-                           asp-route-memberType="@Model.MemberType" asp-route-page="@(currentPage - 1)">Previous</a>
-                    }
-                    else
-                    {
-                        <span class="page-link">Previous</span>
-                    }
-                </li>
+        <nav aria-label="Member pagination" class="aca-pagination">
+            @if (Model.Results.HasPrevious)
+            {
+                <a class="aca-page" asp-action="Index" asp-route-q="@Model.Query" asp-route-batchId="@Model.BatchId"
+                   asp-route-memberType="@Model.MemberType" asp-route-page="@(currentPage - 1)" rel="prev">
+                    <partial name="_Icon" model="@("chevron-left")" />
+                </a>
+            }
+            else
+            {
+                <span class="aca-page aca-page--disabled"><partial name="_Icon" model="@("chevron-left")" /></span>
+            }
 
-                @for (var pageNumber = firstPage; pageNumber <= lastPage; pageNumber++)
-                {
-                    <li class="page-item @(pageNumber == currentPage ? "active" : string.Empty)">
-                        <a class="page-link" asp-action="Index" asp-route-q="@Model.Query" asp-route-batchId="@Model.BatchId"
-                           asp-route-memberType="@Model.MemberType" asp-route-page="@pageNumber">@pageNumber</a>
-                    </li>
-                }
+            @for (var pageNumber = firstPage; pageNumber <= lastPage; pageNumber++)
+            {
+                <a class="aca-page @(pageNumber == currentPage ? "aca-page--current" : string.Empty)"
+                   asp-action="Index" asp-route-q="@Model.Query" asp-route-batchId="@Model.BatchId"
+                   asp-route-memberType="@Model.MemberType" asp-route-page="@pageNumber"
+                   aria-current="@(pageNumber == currentPage ? "page" : "false")">@pageNumber</a>
+            }
 
-                <li class="page-item @(Model.Results.HasNext ? string.Empty : "disabled")">
-                    @if (Model.Results.HasNext)
-                    {
-                        <a class="page-link" asp-action="Index" asp-route-q="@Model.Query" asp-route-batchId="@Model.BatchId"
-                           asp-route-memberType="@Model.MemberType" asp-route-page="@(currentPage + 1)">Next</a>
-                    }
-                    else
-                    {
-                        <span class="page-link">Next</span>
-                    }
-                </li>
-            </ul>
+            @if (Model.Results.HasNext)
+            {
+                <a class="aca-page" asp-action="Index" asp-route-q="@Model.Query" asp-route-batchId="@Model.BatchId"
+                   asp-route-memberType="@Model.MemberType" asp-route-page="@(currentPage + 1)" rel="next">
+                    <partial name="_Icon" model="@("chevron-right")" />
+                </a>
+            }
+            else
+            {
+                <span class="aca-page aca-page--disabled"><partial name="_Icon" model="@("chevron-right")" /></span>
+            }
         </nav>
     }
 }

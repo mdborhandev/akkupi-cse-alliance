@@ -1001,3 +1001,202 @@ a:hover { text-decoration: none; }
 .aca-comments-more { margin: 0.9rem 0 0; font-size: 0.8rem; color: var(--aca-faint); }
 .aca-empty--compact { padding: 1.5rem 1rem; }
 .aca-empty--compact .aca-empty-icon { width: 38px; height: 38px; margin-bottom: 0.5rem; }
+
+/* ---------- 24. Directory: filters, members, batches ---------- */
+.aca-filter-bar {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.7rem;
+  align-items: end;
+  padding: 0.85rem;
+  margin-bottom: 1.1rem;
+  background: var(--aca-surface);
+  border: 1px solid var(--aca-border);
+  border-radius: var(--aca-radius);
+  box-shadow: var(--aca-shadow-xs);
+}
+@media (min-width: 576px) {
+  .aca-filter-bar { grid-template-columns: 1fr 1fr; }
+  .aca-filter-field--grow { grid-column: 1 / -1; }
+  .aca-filter-actions { grid-column: 1 / -1; }
+}
+@media (min-width: 992px) {
+  .aca-filter-bar { grid-template-columns: minmax(220px, 1.6fr) 1fr 1fr auto; }
+  .aca-filter-field--grow, .aca-filter-actions { grid-column: auto; }
+}
+.aca-filter-field { min-width: 0; display: flex; flex-direction: column; }
+.aca-filter-actions { display: flex; gap: 0.4rem; }
+.aca-filter-actions .btn { flex: 1 1 auto; }
+
+.aca-input-icon { position: relative; }
+.aca-input-icon > .aca-icon {
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--aca-faint);
+  pointer-events: none;
+}
+.aca-input-icon > .form-control { padding-left: 2.1rem; }
+
+.aca-member-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
+}
+@media (min-width: 576px) { .aca-member-grid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1200px) { .aca-member-grid { grid-template-columns: 1fr 1fr 1fr; } }
+
+.aca-member-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  background: var(--aca-surface);
+  border: 1px solid var(--aca-border);
+  border-radius: var(--aca-radius);
+  box-shadow: var(--aca-shadow-xs);
+  color: var(--aca-text);
+  min-width: 0;
+  transition: border-color var(--aca-ts) var(--aca-timing), box-shadow var(--aca-ts) var(--aca-timing),
+    transform var(--aca-ts) var(--aca-timing);
+}
+.aca-member-card:hover {
+  color: var(--aca-text);
+  border-color: var(--aca-border-strong);
+  box-shadow: var(--aca-shadow-sm);
+  transform: translateY(-1px);
+}
+.aca-member-info { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; flex: 1 1 auto; }
+.aca-member-name { font-weight: 620; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aca-member-meta { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.aca-member-status {
+  font-size: 0.78rem;
+  color: var(--aca-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aca-member-chevron { color: var(--aca-faint); display: inline-flex; flex: 0 0 auto; }
+.aca-member-card:hover .aca-member-chevron { color: var(--aca-primary); }
+
+.aca-batch-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.7rem;
+}
+@media (min-width: 576px) { .aca-batch-grid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 992px) { .aca-batch-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.aca-batch-card {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.9rem;
+  background: var(--aca-surface);
+  border: 1px solid var(--aca-border);
+  border-radius: var(--aca-radius);
+  box-shadow: var(--aca-shadow-xs);
+  color: var(--aca-text);
+  min-width: 0;
+  transition: border-color var(--aca-ts) var(--aca-timing), box-shadow var(--aca-ts) var(--aca-timing),
+    transform var(--aca-ts) var(--aca-timing);
+}
+.aca-batch-card:hover {
+  color: var(--aca-text);
+  border-color: var(--aca-border-strong);
+  box-shadow: var(--aca-shadow-sm);
+  transform: translateY(-1px);
+}
+.aca-batch-mark {
+  width: 44px;
+  height: 48px;
+  border-radius: var(--aca-radius-sm);
+  display: grid;
+  place-items: center;
+  background: var(--aca-primary-soft);
+  color: var(--aca-primary);
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex: 0 0 auto;
+}
+.aca-batch-body { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; flex: 1 1 auto; }
+.aca-batch-name { font-weight: 620; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aca-batch-session { font-size: 0.78rem; color: var(--aca-muted); }
+.aca-batch-members {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.15rem;
+  font-size: 0.76rem;
+  color: var(--aca-faint);
+}
+.aca-batch-members .aca-icon { width: 0.9rem; height: 0.9rem; }
+
+.aca-page--current {
+  background: var(--aca-primary);
+  border-color: var(--aca-primary);
+  color: var(--aca-primary-contrast);
+  font-weight: 650;
+}
+.aca-page--current:hover { color: var(--aca-primary-contrast); }
+
+/* ---------- 25. Profile ---------- */
+.aca-profile {
+  background: var(--aca-surface);
+  border: 1px solid var(--aca-border);
+  border-radius: var(--aca-radius-lg);
+  box-shadow: var(--aca-shadow-xs);
+  overflow: hidden;
+  max-width: 760px;
+  margin-inline: auto;
+}
+.aca-profile-cover {
+  height: 108px;
+  background:
+    radial-gradient(120% 180% at 12% 0%, rgba(91, 87, 214, 0.55), transparent 60%),
+    radial-gradient(100% 160% at 90% 10%, rgba(229, 111, 69, 0.35), transparent 55%),
+    var(--aca-surface-2);
+}
+.aca-profile-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.9rem;
+  padding: 0 1.25rem;
+  margin-top: -38px;
+}
+.aca-profile-head .aca-avatar-lg { border: 4px solid var(--aca-surface); box-shadow: var(--aca-shadow-sm); }
+.aca-profile-name { font-size: 1.3rem; font-weight: 680; letter-spacing: -0.02em; margin: 0.15rem 0 0; }
+.aca-profile-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.4rem; }
+.aca-profile-status { font-size: 0.86rem; color: var(--aca-muted); margin: 0.45rem 0 0; }
+.aca-profile-actions { display: flex; gap: 0.4rem; padding-bottom: 0.35rem; margin-left: auto; }
+
+.aca-profile-body { padding: 0.65rem 1.25rem 1.25rem; }
+.aca-profile-section-title {
+  font-size: 0.72rem;
+  font-weight: 680;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--aca-faint);
+  margin-bottom: 0.45rem;
+}
+.aca-profile-bio { font-size: 0.94rem; line-height: 1.6; margin: 0; }
+.aca-profile-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: space-between;
+  margin-top: 1.25rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--aca-border);
+  font-size: 0.78rem;
+  color: var(--aca-faint);
+}
+
+/* ---------- 26. Forms layout ---------- */
+.aca-edit-layout { max-width: 760px; margin-inline: auto; }
+.aca-rule { border-color: var(--aca-border); margin: 1.1rem 0; opacity: 1; }
+.aca-photo-row { display: flex; align-items: center; gap: 1rem; }
+.aca-photo-row .form-text { margin-top: 0.25rem; }
