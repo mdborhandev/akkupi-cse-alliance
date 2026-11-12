@@ -60,3 +60,6 @@ appsettings.*.local.json
 ## OS noise
 .DS_Store
 Thumbs.db
+
+# NuGet packages restored inside the repo
+.nuget/

@@ -1,0 +1,10 @@
+namespace ACA.Domain.Entities;
+
+public class Batch
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Name { get; set; } = string.Empty;
+    public string Session { get; set; } = string.Empty;
+    public int BatchNo { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+}
