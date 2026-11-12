@@ -227,6 +227,7 @@ akkupi-cse-alliance/
 │   ├── ef.sh                 # EF Core wrapper (sources local secrets)
 │   └── run-dev.sh            # dotnet run wrapper (sources local secrets)
 ├── docs/
+│   ├── AGENT-PROMPT.md       # Status + prioritized roadmap for the next agent
 │   ├── ARCHITECTURE.md
 │   └── DEPLOYMENT.md
 ├── .env.example              # Placeholder environment-variable template
@@ -286,6 +287,8 @@ These are known gaps, not hidden features:
 
 ## More documentation
 
+- [Agent prompt & roadmap](docs/AGENT-PROMPT.md) — what already exists and the prioritized
+  v1.1 → v2 future-feature list.
 - [Architecture](docs/ARCHITECTURE.md) — layers, dependencies, data model, services, authorization,
   query strategy, storage abstraction, and tradeoffs.
 - [Deployment](docs/DEPLOYMENT.md) — why Vercel cannot host MVC, recommended hosts, configuration,
