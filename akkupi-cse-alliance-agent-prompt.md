@@ -17,10 +17,10 @@ Build the foundation **fast** by freezing the shared surface first, then **fanni
 | Item | Value |
 |---|---|
 | Repo | `akkupi-cse-alliance`, public, description: `Digital community connecting current students, graduates, and alumni of the Akkupi Computer Department.` |
-| Init files | README, Visual Studio `.gitignore`, MIT License |
+| Init files | README, `.gitignore` (already present — extend only, never overwrite), MIT License |
 | Backend | C# / ASP.NET Core MVC, latest stable installed .NET (this machine: .NET 10) |
 | Frontend | Razor `.cshtml`, HTML5, CSS3, Bootstrap 5, vanilla JS / jQuery if useful |
-| Database | **Local PostgreSQL** for development (this machine: PostgreSQL 18, `localhost:5432`, running). Standard PostgreSQL host in production — same provider, connection string only |
+| Database | PostgreSQL 18 on the host cluster (`127.0.0.1:5432`) — database `aca_dev` **already created**, owned by `postgres` (dev only). Production: any standard PostgreSQL host, same provider |
 | ORM | EF Core + Npgsql provider, migrations only |
 | Auth | ASP.NET Core Identity + role-based policies (`Admin`, `Moderator`, `Member`) |
 | Images | Pluggable `IImageStorage`; use a real external service only if credentials exist. Never commit secrets |
@@ -28,7 +28,25 @@ Build the foundation **fast** by freezing the shared surface first, then **fanni
 
 **Hard bans:** React, TypeScript, Angular, Vue, SPA frameworks, Node.js as the app runtime.
 
-**Database (local PostgreSQL only — no cloud DB service):** Use the running local server (`localhost:5432`); create dev database `aca_dev` if missing. If no server is reachable, start one with Docker (`docker run -d --name aca-pg -e POSTGRES_PASSWORD=... -p 5432:5432 postgres:18`). Keep the password out of source: password-less `DefaultConnection` in `appsettings.Development.json`, real password via `dotnet user-secrets` or `ConnectionStrings__DefaultConnection`. Production uses the same PostgreSQL provider — only the connection string changes. Never invent credentials.
+**Local database — already created, reuse it, do not recreate:**
+
+```bash
+# server status (host cluster, port 5432)
+pg_isready -h 127.0.0.1 -p 5432
+systemctl is-active postgresql
+
+# connectivity check
+PGPASSWORD="$(cat .secrets/aca_dev_db_password)" \
+  psql -h 127.0.0.1 -p 5432 -U postgres -d aca_dev -c "select version();"
+```
+
+Connection string — password read from `.secrets/aca_dev_db_password` (gitignored, never commit):
+
+```text
+Host=127.0.0.1;Port=5432;Database=aca_dev;Username=postgres;Password=<from .secrets/aca_dev_db_password>
+```
+
+`aca_dev` exists with UTF8 encoding, owned by `postgres`. The `postgres` superuser is for **local development only** — production must use a least-privilege application role. Do not create another database, do not drop/recreate `aca_dev`, and do not use a cloud DB service. If the server is down, ask the owner to start it (`sudo systemctl start postgresql`); never attempt to reconfigure PostgreSQL. When the web project exists, load the password into `dotnet user-secrets` (or `ConnectionStrings__DefaultConnection`) and keep `appsettings.Development.json` password-free.
 
 **Integrations:** Inspect GitHub and Vercel once, up front. Create the repo only if the integration supports it; otherwise report the exact limitation and creation URL. Never fabricate a successful operation. Vercel cannot host this MVC app — recommend a .NET/container host instead.
 
@@ -58,7 +76,7 @@ Build the foundation **fast** by freezing the shared surface first, then **fanni
   - `ACA.Application/Interfaces/`: `IPostService`, `ICommentService`, `IReactionService`, `IProfileService`, `IBatchService`, `INotificationService`, `IImageStorage`, `IReportService`, `IMemberSearchService`.
   - `ACA.Web/Program.cs` skeleton + `Views/Shared/_Layout.cshtml` skeleton (nav: Feed, Members, Batches, Notifications, Profile; light/dark toggle hook).
   - Empty `README.md` + setup section stub.
-- Configure the **local** database: ensure PostgreSQL is reachable on `localhost:5432`, create database `aca_dev`, put a password-less `DefaultConnection` in `appsettings.Development.json`, and store the real password with `dotnet user-secrets`.
+- Verify the **existing** database (§1): run the `psql` connectivity check, then load the password from `.secrets/aca_dev_db_password` into user-secrets and keep `appsettings.Development.json` password-free. Do not create, drop, or recreate the database.
 - Add packages: `Npgsql.EntityFrameworkCore.PostgreSQL`, `Microsoft.AspNetCore.Identity.EntityFrameworkCore`, `Microsoft.EntityFrameworkCore.Design` (Web/Infrastructure per need).
 - Build once. **Only then** fan out.
 
@@ -74,7 +92,7 @@ Build the foundation **fast** by freezing the shared surface first, then **fanni
 | **A6 Tests & Docs** | `tests/ACA.Tests/**`, `README.md`, `docs/**`, `.env.example` | xUnit tests for auth-sensitive rules (ownership, roles, duplicate reactions), README setup/run/migrate, env-var docs, architecture notes | `dotnet test` green, README runnable from scratch |
 
 **Shared files — orchestrator-only (agents must not edit):**
-`AkkupiCseAlliance.sln`, `src/ACA.Web/Program.cs`, `src/ACA.Infrastructure/Persistence/AppDbContext.cs` + migrations, `src/ACA.Domain/Entities/**`, `ACA.Application/Interfaces/**`, `.gitignore`, `*.csproj`.
+`AkkupiCseAlliance.sln`, `src/ACA.Web/Program.cs`, `src/ACA.Infrastructure/Persistence/AppDbContext.cs` + migrations, `src/ACA.Domain/Entities/**`, `ACA.Application/Interfaces/**`, `.gitignore` (extend only), `.secrets/**` (never read into source or commit), `*.csproj`.
 
 If an agent needs a change in a shared file, it must **not** edit it — it returns a one-line "change request" in its handoff and works around it using the frozen interface.
 
@@ -120,7 +138,7 @@ report only: files added, build result, deviations, change requests (one line ea
 
 ## 5. Non-Negotiable Gates
 
-- Build clean; tests green; site runs locally against the local PostgreSQL instance (`aca_dev`), password only from user-secrets/env.
+- Build clean; tests green; site connects to `aca_dev` on `127.0.0.1:5432` (existing host database), password only from user-secrets/env.
 - Identity for passwords; anti-forgery on all forms; `[Authorize]`/policies on every protected action.
 - Users cannot modify others' content without authority; uploads validated by content type and size.
 - Secrets only via env vars / user secrets; no credentials in Git, logs, README, or seed files.
@@ -134,7 +152,7 @@ report only: files added, build result, deviations, change requests (one line ea
 
 1. Repo exists on GitHub with README + `.gitignore` + MIT — or the exact blocker and creation URL is documented.
 2. Solution + 5 projects build with `dotnet build`.
-3. Identity + role seeding in place; local PostgreSQL `aca_dev` connection works without committed secrets.
+3. Identity + role seeding in place; the existing `aca_dev` database (`127.0.0.1:5432`, user `postgres`) connects without committed secrets.
 4. Responsive light/dark layout and feed/members/profile/admin screens reachable.
 5. One initial migration exists and `dotnet ef database update` succeeds.
 6. `dotnet test` passes for ownership/authorization/duplicate-reaction rules.

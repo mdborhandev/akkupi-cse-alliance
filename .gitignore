@@ -1,0 +1,62 @@
+# Local dev secrets (never commit)
+.secrets/
+*.local.env
+
+## .NET / Visual Studio (subset of the standard VisualStudio.gitignore)
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+.vs/
+.vscode/
+.idea/
+*.swp
+*~
+__pycache__/
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+build/
+dist/
+artifacts/
+publish/
+*.dll
+*.exe
+*.pdb
+*.cache
+*.ilk
+*.meta
+*.obj
+*.nupkg
+*.snupkg
+*.ncb
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.opendb
+TestResults/
+[Tt]est[Rr]esult*/
+*.trx
+coverage*.json
+coverage*.xml
+coverage*.info
+
+## EF Core / local runtime data
+*.db
+*.db-shm
+*.db-wal
+appsettings.*.local.json
+
+## OS noise
+.DS_Store
+Thumbs.db
