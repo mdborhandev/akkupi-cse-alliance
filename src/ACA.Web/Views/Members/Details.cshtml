@@ -1,0 +1,70 @@
+@model MemberDetailDto
+@{
+    ViewData["Title"] = Model.FullName;
+    var memberTypeLabel = Model.MemberType == MemberType.Alumni ? "Alumni" : "Current student";
+
+    var nameParts = (Model.FullName ?? string.Empty).Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    var initials = string.Empty;
+    if (nameParts.Length > 0) initials += nameParts[0][0];
+    if (nameParts.Length > 1) initials += nameParts[1][0];
+    initials = initials.Length == 0 ? "?" : initials.ToUpperInvariant();
+}
+
+<div class="mb-3">
+    <a class="small text-decoration-none" asp-action="Index">← Back to members</a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-9 col-xl-8">
+        <div class="card">
+            <div class="card-body p-4 p-md-5">
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-3">
+                    @if (!string.IsNullOrWhiteSpace(Model.ProfilePhotoUrl))
+                    {
+                        <img src="@Model.ProfilePhotoUrl" alt="@Model.FullName" class="aca-avatar" />
+                    }
+                    else
+                    {
+                        <div class="aca-avatar d-inline-flex align-items-center justify-content-center fw-semibold text-body-secondary" aria-hidden="true">@initials</div>
+                    }
+
+                    <div class="flex-grow-1">
+                        <h1 class="h4 fw-semibold mb-2">@Model.FullName</h1>
+                        <div class="d-flex flex-wrap align-items-center gap-2 small">
+                            <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis">@memberTypeLabel</span>
+                            @if (!string.IsNullOrWhiteSpace(Model.BatchName))
+                            {
+                                <span class="aca-muted">@Model.BatchName</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Session))
+                            {
+                                <span class="aca-muted">Session @Model.Session</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.CurrentStatus))
+                {
+                    <p class="mt-3 mb-0 small">
+                        <span class="aca-muted">Status:</span> @Model.CurrentStatus
+                    </p>
+                }
+
+                <hr class="my-4" />
+
+                <h2 class="h6 text-uppercase aca-muted mb-2">About</h2>
+                @if (!string.IsNullOrWhiteSpace(Model.Bio))
+                {
+                    <p class="aca-post-body mb-0">@Model.Bio</p>
+                }
+                else
+                {
+                    <p class="aca-muted mb-0">This member has not written a bio yet.</p>
+                }
+
+                <p class="small aca-muted mt-4 mb-0">Member since @Model.JoinedAtUtc.ToLocalTime().ToString("MMMM yyyy")</p>
+            </div>
+        </div>
+    </div>
+</div>

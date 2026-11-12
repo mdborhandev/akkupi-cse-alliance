@@ -1,0 +1,180 @@
+@model PagedResult<PostDto>
+@{
+    ViewData["Title"] = "Feed";
+    var batchId = (Guid?)ViewData["BatchId"];
+    var batchQuery = batchId.HasValue ? $"&batchId={batchId.Value}" : string.Empty;
+    var feedUrl = Url.Action("Index", "Posts") ?? "/Posts";
+    var isSignedIn = User.Identity?.IsAuthenticated == true;
+}
+
+<div class="aca-feed">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <div>
+            <h1 class="h4 fw-semibold mb-0">Community feed</h1>
+            <p class="aca-muted small mb-0">Latest posts from students and alumni.</p>
+        </div>
+        @if (isSignedIn)
+        {
+            <a class="btn btn-primary" asp-action="Create">Share something</a>
+        }
+        else
+        {
+            <a class="btn btn-primary" asp-controller="Account" asp-action="Login">Log in to post</a>
+        }
+    </div>
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="aca-empty">
+            <p class="mb-1 fw-semibold">No posts yet</p>
+            <p class="mb-0 small">Be the first to share something with the community.</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var post in Model.Items)
+        {
+            <article class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-2">
+                        @if (!string.IsNullOrWhiteSpace(post.AuthorPhotoUrl))
+                        {
+                            <img src="@post.AuthorPhotoUrl" alt="" class="aca-avatar flex-shrink-0" />
+                        }
+                        else
+                        {
+                            <span class="aca-avatar d-inline-flex align-items-center justify-content-center fw-semibold text-body-secondary flex-shrink-0">
+                                @Initial(post.AuthorName)
+                            </span>
+                        }
+                        <div class="flex-grow-1">
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <span class="fw-semibold">@DisplayName(post.AuthorName)</span>
+                                @if (!string.IsNullOrWhiteSpace(post.BatchName))
+                                {
+                                    <span class="badge text-bg-secondary">@post.BatchName</span>
+                                }
+                                @if (post.MemberType == MemberType.Alumni)
+                                {
+                                    <span class="badge text-bg-info">Alumni</span>
+                                }
+                            </div>
+                            <div class="small aca-muted">
+                                <span title="@post.CreatedAtUtc.ToString("u")">@TimeAgo(post.CreatedAtUtc)</span>
+                                @if (post.IsEdited)
+                                {
+                                    <span>· edited</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="aca-post-body mt-3">@post.Content</div>
+
+                    @if (post.Images.Count > 0)
+                    {
+                        var imageColumn = post.Images.Count == 1 ? "col-12" : post.Images.Count == 2 ? "col-6" : "col-4";
+                        <div class="row g-2 mt-1">
+                            @foreach (var image in post.Images)
+                            {
+                                <div class="@imageColumn">
+                                    <a asp-action="Details" asp-route-id="@post.Id"
+                                       class="d-block ratio ratio-4x3 rounded overflow-hidden border">
+                                        <img src="@image.Url" alt="Image attached to a post by @DisplayName(post.AuthorName)"
+                                             class="w-100 h-100 object-fit-cover" loading="lazy" />
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3">
+                        <span class="small aca-muted">
+                            @post.ReactionCount @(post.ReactionCount == 1 ? "reaction" : "reactions")
+                            · @post.CommentCount @(post.CommentCount == 1 ? "comment" : "comments")
+                        </span>
+                        <a class="btn btn-sm btn-outline-secondary" asp-action="Details" asp-route-id="@post.Id">
+                            Open discussion
+                        </a>
+                    </div>
+                </div>
+            </article>
+        }
+
+        @if (Model.TotalPages > 1)
+        {
+            <nav aria-label="Feed pagination">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(Model.HasPrevious ? string.Empty : "disabled")">
+                        @if (Model.HasPrevious)
+                        {
+                            <a class="page-link" href="@($"{feedUrl}?page={Model.Page - 1}{batchQuery}")">Previous</a>
+                        }
+                        else
+                        {
+                            <span class="page-link">Previous</span>
+                        }
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Page @Model.Page of @Model.TotalPages</span>
+                    </li>
+                    <li class="page-item @(Model.HasNext ? string.Empty : "disabled")">
+                        @if (Model.HasNext)
+                        {
+                            <a class="page-link" href="@($"{feedUrl}?page={Model.Page + 1}{batchQuery}")">Next</a>
+                        }
+                        else
+                        {
+                            <span class="page-link">Next</span>
+                        }
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+</div>
+
+@functions {
+    private static string DisplayName(string? name)
+    {
+        var trimmed = (name ?? string.Empty).Trim();
+        return trimmed.Length == 0 ? "Member" : trimmed;
+    }
+
+    private static string Initial(string? name)
+    {
+        var trimmed = (name ?? string.Empty).Trim();
+        return trimmed.Length == 0 ? "?" : trimmed[..1].ToUpperInvariant();
+    }
+
+    private static string TimeAgo(DateTime utc)
+    {
+        var span = DateTime.UtcNow - utc;
+        if (span.TotalSeconds < 60)
+        {
+            return "just now";
+        }
+
+        if (span.TotalMinutes < 60)
+        {
+            return $"{(int)span.TotalMinutes}m ago";
+        }
+
+        if (span.TotalHours < 24)
+        {
+            return $"{(int)span.TotalHours}h ago";
+        }
+
+        if (span.TotalDays < 7)
+        {
+            return $"{(int)span.TotalDays}d ago";
+        }
+
+        if (span.TotalDays < 30)
+        {
+            return $"{(int)(span.TotalDays / 7)}w ago";
+        }
+
+        return utc.ToLocalTime().ToString("MMM d, yyyy");
+    }
+}

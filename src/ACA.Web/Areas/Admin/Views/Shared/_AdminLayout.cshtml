@@ -1,0 +1,83 @@
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+}
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · ACA Admin</title>
+    <script>
+        (function () {
+            var saved = localStorage.getItem('aca-theme');
+            if (!saved) { saved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+            document.documentElement.setAttribute('data-bs-theme', saved);
+        })();
+    </script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="bg-body-tertiary">
+<div class="container-fluid">
+    <div class="row min-vh-100">
+        <aside class="col-12 col-lg-3 col-xl-2 border-end border-bottom bg-body p-3 p-lg-4 d-flex flex-column">
+            <a class="d-inline-flex align-items-center gap-2 text-decoration-none text-body mb-4" asp-area="" asp-controller="Home" asp-action="Index">
+                <span class="brand-mark">ACA</span>
+                <span class="fw-semibold">Admin</span>
+            </a>
+            <div class="small text-uppercase aca-muted fw-semibold mb-2">Moderation</div>
+            <nav class="nav flex-row flex-lg-column flex-wrap gap-1 mb-3">
+                <a class="nav-link rounded px-2 py-1 @(string.Equals(currentController, "Dashboard", StringComparison.OrdinalIgnoreCase) ? "bg-primary-subtle text-primary fw-semibold" : "link-body-emphasis")"
+                   asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+                <a class="nav-link rounded px-2 py-1 @(string.Equals(currentController, "Members", StringComparison.OrdinalIgnoreCase) ? "bg-primary-subtle text-primary fw-semibold" : "link-body-emphasis")"
+                   asp-area="Admin" asp-controller="Members" asp-action="Index">Members</a>
+                <a class="nav-link rounded px-2 py-1 @(string.Equals(currentController, "Batches", StringComparison.OrdinalIgnoreCase) ? "bg-primary-subtle text-primary fw-semibold" : "link-body-emphasis")"
+                   asp-area="Admin" asp-controller="Batches" asp-action="Index">Batches</a>
+                <a class="nav-link rounded px-2 py-1 @(string.Equals(currentController, "Reports", StringComparison.OrdinalIgnoreCase) ? "bg-primary-subtle text-primary fw-semibold" : "link-body-emphasis")"
+                   asp-area="Admin" asp-controller="Reports" asp-action="Index">Reports</a>
+            </nav>
+            <div class="mt-auto pt-3 border-top small">
+                <a class="nav-link px-0 link-body-emphasis" asp-area="" asp-controller="Home" asp-action="Index">← Back to site</a>
+            </div>
+        </aside>
+        <div class="col-12 col-lg-9 col-xl-10 d-flex flex-column p-0">
+            <header class="bg-body border-bottom py-3 px-3 px-lg-4 d-flex justify-content-between align-items-center gap-2">
+                <div>
+                    <div class="fw-semibold">Admin area</div>
+                    <div class="small aca-muted">@ViewData["Title"]</div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small aca-muted d-none d-sm-inline">@User.Identity?.Name</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="themeToggle"
+                            title="Toggle theme" aria-label="Toggle color theme">◐</button>
+                </div>
+            </header>
+            <main class="flex-grow-1 p-3 p-lg-4">
+                @if (TempData["Success"] is string success)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @success
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                @if (TempData["Error"] is string error)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @error
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                @RenderBody()
+            </main>
+            <footer class="border-top py-3 px-3 px-lg-4 small aca-muted">
+                Akkupi CSE Alliance · moderation tools
+            </footer>
+        </div>
+    </div>
+</div>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/theme.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

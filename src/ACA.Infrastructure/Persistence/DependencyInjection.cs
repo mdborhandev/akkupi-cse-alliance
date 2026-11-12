@@ -1,5 +1,7 @@
 using ACA.Domain.Entities;
+using ACA.Application.Interfaces;
 using ACA.Infrastructure.Identity;
+using ACA.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -20,6 +22,8 @@ public static class DependencyInjection
         }
 
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+        services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+        services.AddScoped<IImageStorage, LocalImageStorage>();
 
         services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
             {

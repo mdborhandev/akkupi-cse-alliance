@@ -1,0 +1,87 @@
+@model PagedResult<ReportDto>
+@{
+    ViewData["Title"] = "Reports";
+    var totalPages = Model.TotalPages == 0 ? 1 : Model.TotalPages;
+}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-1">Pending reports</h1>
+        <p class="aca-muted small mb-0">@Model.TotalCount report(s) awaiting review · page @Model.Page of @totalPages</p>
+    </div>
+    <a class="btn btn-sm btn-outline-secondary" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+</div>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="aca-empty">No pending reports. The community is quiet.</div>
+}
+else
+{
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Reported</th>
+                        <th scope="col">Reporter</th>
+                        <th scope="col">Target</th>
+                        <th scope="col">Reason</th>
+                        <th scope="col">Resolve</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var report in Model.Items)
+                {
+                    var targetType = report.PostId.HasValue ? "Post" : report.CommentId.HasValue ? "Comment" : "Member";
+                    var targetValue = report.PostId ?? report.CommentId ?? report.TargetUserId;
+                    var targetId = targetValue.HasValue ? targetValue.Value.ToString("N")[..8] : "—";
+                    <tr>
+                        <td class="small aca-muted">
+                            @report.CreatedAtUtc.ToLocalTime().ToString("dd MMM yyyy")
+                            <div class="small">@report.CreatedAtUtc.ToLocalTime().ToString("HH:mm")</div>
+                        </td>
+                        <td class="small">@report.ReporterName</td>
+                        <td class="small">
+                            <span class="badge text-bg-secondary">@targetType</span>
+                            <span class="aca-muted d-block mt-1"><code>@targetId</code></span>
+                        </td>
+                        <td class="small">
+                            <div class="aca-post-body">@report.Reason</div>
+                        </td>
+                        <td>
+                            <form method="post" asp-area="Admin" asp-controller="Reports" asp-action="Resolve"
+                                  asp-route-id="@report.Id" asp-route-page="@Model.Page"
+                                  class="d-flex flex-wrap align-items-center gap-2"
+                                  onsubmit="return confirm('Resolve this report? Removing content cannot be undone.');">
+                                <select name="status" class="form-select form-select-sm w-auto" aria-label="Resolution status">
+                                    <option value="@ReportStatus.Reviewed">Reviewed — action taken</option>
+                                    <option value="@ReportStatus.Dismissed">Dismissed — no action</option>
+                                </select>
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="checkbox" name="removeContent" value="true"
+                                           id="remove-@report.Id" />
+                                    <label class="form-check-label small" for="remove-@report.Id">Remove content</label>
+                                </div>
+                                <button type="submit" class="btn btn-sm btn-primary">Resolve</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (Model.HasPrevious || Model.HasNext)
+    {
+        <nav class="d-flex justify-content-between align-items-center mt-3" aria-label="Reports pagination">
+            <a class="btn btn-sm btn-outline-secondary @(Model.HasPrevious ? "" : "disabled")"
+               asp-area="Admin" asp-controller="Reports" asp-action="Index"
+               asp-route-page="@(Model.Page - 1)">← Previous</a>
+            <span class="small aca-muted">Page @Model.Page of @totalPages</span>
+            <a class="btn btn-sm btn-outline-secondary @(Model.HasNext ? "" : "disabled")"
+               asp-area="Admin" asp-controller="Reports" asp-action="Index"
+               asp-route-page="@(Model.Page + 1)">Next →</a>
+        </nav>
+    }
+}

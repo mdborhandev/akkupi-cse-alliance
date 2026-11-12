@@ -1,0 +1,23 @@
+@{
+    ViewData["Title"] = "Access denied";
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-body p-4 p-md-5 text-center">
+                <div class="display-5 mb-2" aria-hidden="true">🔒</div>
+                <h1 class="h4 fw-semibold mb-2">Access denied</h1>
+                <p class="aca-muted mb-4">
+                    You do not have permission to view this page. If you think this is a mistake,
+                    contact a community admin.
+                </p>
+                <a class="btn btn-primary" asp-controller="Home" asp-action="Index">Back to home</a>
+                @if (User.Identity?.IsAuthenticated != true)
+                {
+                    <a class="btn btn-outline-secondary ms-2" asp-controller="Account" asp-action="Login">Log in</a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

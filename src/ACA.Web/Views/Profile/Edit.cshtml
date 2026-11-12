@@ -1,0 +1,93 @@
+@model UpdateProfileDto
+@{
+    ViewData["Title"] = "Edit profile";
+    var batches = ViewData["Batches"] as IReadOnlyList<BatchDto> ?? Array.Empty<BatchDto>();
+    var currentPhotoUrl = ViewData["CurrentPhotoUrl"] as string;
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-9 col-xl-8">
+        <div class="card">
+            <div class="card-body p-4 p-md-5">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+                    <div>
+                        <h1 class="h4 fw-semibold mb-1">Edit profile</h1>
+                        <p class="aca-muted mb-0 small">Keep your batch and status up to date so batchmates can find you.</p>
+                    </div>
+                    <a class="btn btn-outline-secondary btn-sm" asp-action="Index">Cancel</a>
+                </div>
+
+                <form asp-controller="Profile" asp-action="Edit" method="post" enctype="multipart/form-data">
+                    <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                    <div class="row g-4">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label d-block">Profile photo</label>
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                @if (!string.IsNullOrWhiteSpace(currentPhotoUrl))
+                                {
+                                    <img src="@currentPhotoUrl" alt="Current profile photo" class="aca-avatar" />
+                                }
+                                else
+                                {
+                                    <div class="aca-avatar d-inline-flex align-items-center justify-content-center text-body-secondary" aria-hidden="true">—</div>
+                                }
+                                <span class="aca-muted small">JPG, PNG or WebP.</span>
+                            </div>
+                            <input class="form-control form-control-sm" type="file" name="photo" accept="image/*" />
+                        </div>
+
+                        <div class="col-12 col-md-8">
+                            <div class="mb-3">
+                                <label asp-for="FullName" class="form-label">Full name</label>
+                                <input asp-for="FullName" class="form-control" maxlength="120" autocomplete="name" />
+                                <span asp-validation-for="FullName" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Bio" class="form-label">Bio</label>
+                                <textarea asp-for="Bio" class="form-control" rows="4" maxlength="600"
+                                          placeholder="A short introduction — your interests, work or favourite memories."></textarea>
+                                <div class="form-text">Up to 600 characters.</div>
+                                <span asp-validation-for="Bio" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6">
+                            <label asp-for="BatchId" class="form-label">Batch</label>
+                            <select asp-for="BatchId" class="form-select">
+                                <option value="">Not set</option>
+                                @foreach (var batch in batches)
+                                {
+                                    <option value="@batch.Id">Batch @batch.BatchNo — @batch.Name (@batch.Session)</option>
+                                }
+                            </select>
+                            <span asp-validation-for="BatchId" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label asp-for="MemberType" class="form-label">I am a</label>
+                            <select asp-for="MemberType" class="form-select">
+                                <option value="CurrentStudent">Current student</option>
+                                <option value="Alumni">Alumni</option>
+                            </select>
+                            <span asp-validation-for="MemberType" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 mt-3">
+                        <label asp-for="CurrentStatus" class="form-label">Current status <span class="aca-muted fw-normal">(optional)</span></label>
+                        <input asp-for="CurrentStatus" class="form-control" maxlength="120" placeholder="e.g. Software Engineer at Acme" />
+                        <span asp-validation-for="CurrentStatus" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                        <a class="btn btn-outline-secondary" asp-action="Index">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

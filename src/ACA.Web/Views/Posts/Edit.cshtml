@@ -1,0 +1,50 @@
+@model PostDto
+@{
+    ViewData["Title"] = "Edit post";
+}
+
+<div class="aca-feed">
+    <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+        <h1 class="h4 fw-semibold mb-0">Edit post</h1>
+        <a class="small text-decoration-none" asp-action="Details" asp-route-id="@Model.Id">Back to post</a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Content" class="form-label">Post content</label>
+                    <textarea asp-for="Content" class="form-control" rows="6" maxlength="5000" required></textarea>
+                    <span asp-validation-for="Content" class="text-danger small"></span>
+                    <div class="form-text">Up to 5,000 characters.</div>
+                </div>
+
+                @if (Model.Images.Count > 0)
+                {
+                    <div class="mb-3">
+                        <span class="form-label d-block">Attached images</span>
+                        <div class="row g-2">
+                            @foreach (var image in Model.Images)
+                            {
+                                <div class="col-4">
+                                    <div class="ratio ratio-1x1 rounded overflow-hidden border">
+                                        <img src="@image.Url" alt="Attached image"
+                                             class="w-100 h-100 object-fit-cover" loading="lazy" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <div class="form-text">Images stay as originally posted.</div>
+                    </div>
+                }
+
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                    <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,74 @@
+@model RegisterDto
+@{
+    ViewData["Title"] = "Join";
+    var batches = ViewData["Batches"] as IReadOnlyList<BatchDto> ?? Array.Empty<BatchDto>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-9 col-lg-7">
+        <div class="card">
+            <div class="card-body p-4 p-md-5">
+                <h1 class="h4 fw-semibold mb-1">Join the community</h1>
+                <p class="aca-muted mb-4">Create your Akkupi CSE Alliance account — it only takes a minute.</p>
+
+                <form asp-controller="Account" asp-action="Register" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="FullName" class="form-label">Full name</label>
+                        <input asp-for="FullName" class="form-control" autocomplete="name" maxlength="120" placeholder="e.g. Sadia Rahman" />
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label">Email</label>
+                        <input asp-for="Email" class="form-control" autocomplete="email" maxlength="256" placeholder="you@example.com" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label">Password</label>
+                        <input asp-for="Password" class="form-control" autocomplete="new-password" placeholder="At least 8 characters" />
+                        <div class="form-text">Use at least 8 characters.</div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6">
+                            <label asp-for="BatchId" class="form-label">Batch</label>
+                            <select asp-for="BatchId" class="form-select">
+                                <option value="">Not sure yet</option>
+                                @foreach (var batch in batches)
+                                {
+                                    <option value="@batch.Id">Batch @batch.BatchNo — @batch.Name (@batch.Session)</option>
+                                }
+                            </select>
+                            <span asp-validation-for="BatchId" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label asp-for="MemberType" class="form-label">I am a</label>
+                            <select asp-for="MemberType" class="form-select">
+                                <option value="CurrentStudent">Current student</option>
+                                <option value="Alumni">Alumni</option>
+                            </select>
+                            <span asp-validation-for="MemberType" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 mt-3">
+                        <label asp-for="CurrentStatus" class="form-label">Current status <span class="aca-muted fw-normal">(optional)</span></label>
+                        <input asp-for="CurrentStatus" class="form-control" maxlength="120" placeholder="e.g. Software Engineer at Acme, or 4th year student" />
+                        <span asp-validation-for="CurrentStatus" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Create account</button>
+                </form>
+
+                <p class="small aca-muted text-center mt-4 mb-0">
+                    Already have an account?
+                    <a asp-controller="Account" asp-action="Login">Log in</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

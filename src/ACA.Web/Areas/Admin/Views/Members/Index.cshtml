@@ -1,0 +1,107 @@
+@model PagedResult<AdminMemberRow>
+@{
+    ViewData["Title"] = "Members";
+    var search = Context.Request.Query["q"].ToString();
+    var isAdmin = User.IsInRole("Admin");
+    var totalPages = Model.TotalPages == 0 ? 1 : Model.TotalPages;
+}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-1">Members</h1>
+        <p class="aca-muted small mb-0">@Model.TotalCount member(s) · page @Model.Page of @totalPages</p>
+    </div>
+    <form method="get" asp-area="Admin" asp-controller="Members" asp-action="Index" class="d-flex gap-2">
+        <input type="search" name="q" value="@search" class="form-control form-control-sm"
+               placeholder="Search name or email" maxlength="120" aria-label="Search members" />
+        <button type="submit" class="btn btn-sm btn-outline-secondary">Search</button>
+    </form>
+</div>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="aca-empty">No members match this search.</div>
+}
+else
+{
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Member</th>
+                        <th scope="col">Batch</th>
+                        <th scope="col">Type</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Joined</th>
+                        @if (isAdmin)
+                        {
+                            <th scope="col" class="text-end">Action</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var member in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                @if (!string.IsNullOrWhiteSpace(member.ProfilePhotoUrl))
+                                {
+                                    <img src="@member.ProfilePhotoUrl" alt="" class="aca-avatar aca-avatar-sm" />
+                                }
+                                else
+                                {
+                                    <span class="aca-avatar aca-avatar-sm d-inline-flex align-items-center justify-content-center bg-secondary-subtle text-body-secondary fw-semibold">
+                                        @(member.FullName.Length > 0 ? member.FullName[..1].ToUpperInvariant() : "?")
+                                    </span>
+                                }
+                                <div>
+                                    <div class="fw-semibold">@member.FullName</div>
+                                    <div class="small aca-muted">@(member.Email ?? "No email on file")</div>
+                                    @if (!string.IsNullOrWhiteSpace(member.CurrentStatus))
+                                    {
+                                        <div class="small aca-muted">@member.CurrentStatus</div>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                        <td class="small">@(member.BatchName ?? "—")</td>
+                        <td class="small">@(member.MemberType == MemberType.CurrentStudent ? "Current student" : "Alumni")</td>
+                        <td>
+                            <span class="badge @(member.IsApproved ? "text-bg-success" : "text-bg-warning")">
+                                @(member.IsApproved ? "Approved" : "Pending")
+                            </span>
+                        </td>
+                        <td class="small aca-muted">@member.JoinedAtUtc.ToLocalTime().ToString("dd MMM yyyy")</td>
+                        @if (isAdmin)
+                        {
+                            <td class="text-end">
+                                <form method="post" asp-area="Admin" asp-controller="Members" asp-action="ToggleApproval"
+                                      asp-route-id="@member.ProfileId" asp-route-page="@Model.Page" asp-route-q="@search"
+                                      onsubmit="return confirm('@(member.IsApproved ? "Revoke approval for this member?" : "Approve this member?")');">
+                                    <button type="submit" class="btn btn-sm @(member.IsApproved ? "btn-outline-danger" : "btn-outline-success")">
+                                        @(member.IsApproved ? "Revoke" : "Approve")
+                                    </button>
+                                </form>
+                            </td>
+                        }
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (Model.HasPrevious || Model.HasNext)
+    {
+        <nav class="d-flex justify-content-between align-items-center mt-3" aria-label="Members pagination">
+            <a class="btn btn-sm btn-outline-secondary @(Model.HasPrevious ? "" : "disabled")"
+               asp-area="Admin" asp-controller="Members" asp-action="Index"
+               asp-route-page="@(Model.Page - 1)" asp-route-q="@search">← Previous</a>
+            <span class="small aca-muted">Page @Model.Page of @totalPages</span>
+            <a class="btn btn-sm btn-outline-secondary @(Model.HasNext ? "" : "disabled")"
+               asp-area="Admin" asp-controller="Members" asp-action="Index"
+               asp-route-page="@(Model.Page + 1)" asp-route-q="@search">Next →</a>
+        </nav>
+    }
+}

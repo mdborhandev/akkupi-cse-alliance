@@ -1,0 +1,104 @@
+@model PagedResult<NotificationDto>
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<div class="aca-feed">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <div>
+            <h1 class="h4 mb-0">Notifications</h1>
+            <p class="small aca-muted mb-0">Reactions, comments and replies on your activity.</p>
+        </div>
+        @if (Model.Items.Count > 0)
+        {
+            <form method="post" asp-controller="Notifications" asp-action="MarkAllRead" asp-route-page="@Model.Page">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Mark all as read</button>
+            </form>
+        }
+    </div>
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="aca-empty">
+            You have no notifications yet.
+        </div>
+    }
+    else
+    {
+        <ul class="list-group list-group-flush border rounded">
+            @foreach (var notification in Model.Items)
+            {
+                <li class="list-group-item d-flex gap-3 align-items-start @(notification.IsRead ? string.Empty : "bg-body-tertiary")">
+                    @if (!string.IsNullOrWhiteSpace(notification.ActorPhotoUrl))
+                    {
+                        <img src="@notification.ActorPhotoUrl" alt="" class="aca-avatar aca-avatar-sm flex-shrink-0" />
+                    }
+                    else if (!string.IsNullOrWhiteSpace(notification.ActorName))
+                    {
+                        <span class="aca-avatar aca-avatar-sm flex-shrink-0 d-inline-flex align-items-center justify-content-center fw-semibold small border">
+                            @Initial(notification.ActorName)
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="brand-mark flex-shrink-0" aria-hidden="true">ACA</span>
+                    }
+
+                    <div class="flex-grow-1">
+                        <div class="d-flex flex-wrap align-items-baseline gap-2">
+                            <span class="@(notification.IsRead ? string.Empty : "fw-semibold")">@notification.Message</span>
+                            @if (!notification.IsRead)
+                            {
+                                <span class="badge text-bg-primary">New</span>
+                            }
+                        </div>
+                        <div class="small aca-muted" title="@notification.CreatedAtUtc.ToString("u")">
+                            @notification.CreatedAtUtc.ToLocalTime().ToString("g")
+                        </div>
+                        @if (notification.PostId.HasValue)
+                        {
+                            <a class="small" asp-controller="Posts" asp-action="Details" asp-route-id="@notification.PostId">
+                                View post
+                            </a>
+                        }
+                    </div>
+
+                    @if (!notification.IsRead)
+                    {
+                        <form method="post" asp-controller="Notifications" asp-action="MarkRead"
+                              asp-route-id="@notification.Id" asp-route-page="@Model.Page" class="ms-auto flex-shrink-0">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Mark read</button>
+                        </form>
+                    }
+                </li>
+            }
+        </ul>
+
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="mt-3" aria-label="Notification pages">
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                    <li class="page-item @(Model.HasPrevious ? string.Empty : "disabled")">
+                        <a class="page-link" asp-controller="Notifications" asp-action="Index" asp-route-page="@(Model.Page - 1)"
+                           aria-disabled="@(Model.HasPrevious ? "false" : "true")">Previous</a>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Page @Model.Page of @Model.TotalPages</span>
+                    </li>
+                    <li class="page-item @(Model.HasNext ? string.Empty : "disabled")">
+                        <a class="page-link" asp-controller="Notifications" asp-action="Index" asp-route-page="@(Model.Page + 1)"
+                           aria-disabled="@(Model.HasNext ? "false" : "true")">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+</div>
+
+@functions {
+    private static string Initial(string? name)
+    {
+        var trimmed = (name ?? string.Empty).Trim();
+        return trimmed.Length == 0 ? "?" : trimmed[..1].ToUpperInvariant();
+    }
+}

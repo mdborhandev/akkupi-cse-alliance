@@ -1,0 +1,162 @@
+@using System.Security.Claims
+@model PostDto
+@{
+    ViewData["Title"] = "Post";
+    var isSignedIn = User.Identity?.IsAuthenticated == true;
+    var currentUserId = Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var parsedId)
+        ? (Guid?)parsedId
+        : null;
+    var canManage = isSignedIn && (currentUserId == Model.AuthorId || User.IsInRole("Admin"));
+    var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+    var reactionTypes = new[] { ReactionType.Like, ReactionType.Love, ReactionType.Support };
+}
+
+<div class="aca-feed">
+    <a class="small text-decoration-none" asp-action="Index">← Back to feed</a>
+
+    <article class="card mt-3">
+        <div class="card-body">
+            <div class="d-flex flex-wrap align-items-start justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    @if (!string.IsNullOrWhiteSpace(Model.AuthorPhotoUrl))
+                    {
+                        <img src="@Model.AuthorPhotoUrl" alt="" class="aca-avatar flex-shrink-0" />
+                    }
+                    else
+                    {
+                        <span class="aca-avatar d-inline-flex align-items-center justify-content-center fw-semibold text-body-secondary flex-shrink-0">
+                            @Initial(Model.AuthorName)
+                        </span>
+                    }
+                    <div>
+                        <div class="fw-semibold">@DisplayName(Model.AuthorName)</div>
+                        <div class="small aca-muted d-flex flex-wrap align-items-center gap-2">
+                            @if (!string.IsNullOrWhiteSpace(Model.BatchName))
+                            {
+                                <span class="badge text-bg-secondary">@Model.BatchName</span>
+                            }
+                            @if (Model.MemberType == MemberType.Alumni)
+                            {
+                                <span class="badge text-bg-info">Alumni</span>
+                            }
+                            <span title="@Model.CreatedAtUtc.ToString("u")">@TimeAgo(Model.CreatedAtUtc)</span>
+                            @if (Model.IsEdited)
+                            {
+                                <span>· edited</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                @if (canManage)
+                {
+                    <div class="d-flex flex-wrap gap-2">
+                        <a class="btn btn-sm btn-outline-secondary" asp-action="Edit" asp-route-id="@Model.Id">Edit</a>
+                        <form method="post" asp-action="Delete" asp-route-id="@Model.Id"
+                              onsubmit="return confirm('Delete this post? This cannot be undone.');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </div>
+                }
+            </div>
+
+            <div class="aca-post-body mt-3">@Model.Content</div>
+
+            @if (Model.Images.Count > 0)
+            {
+                var imageColumn = Model.Images.Count == 1 ? "col-12" : "col-6";
+                <div class="row g-2 mt-1">
+                    @foreach (var image in Model.Images)
+                    {
+                        <div class="@imageColumn">
+                            <a href="@image.Url" target="_blank" rel="noopener noreferrer"
+                               class="d-block ratio ratio-4x3 rounded overflow-hidden border">
+                                <img src="@image.Url" alt="Image attached to a post by @DisplayName(Model.AuthorName)"
+                                     class="w-100 h-100 object-fit-cover" loading="lazy" />
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+
+            <hr class="my-3" />
+
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    @foreach (var type in reactionTypes)
+                    {
+                        <form method="post" asp-controller="Reactions" asp-action="Toggle" class="d-inline">
+                            <input type="hidden" name="postId" value="@Model.Id" />
+                            <input type="hidden" name="type" value="@((int)type)" />
+                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                            <button type="submit"
+                                    class="btn btn-sm @(Model.MyReaction == type ? "btn-primary" : "btn-outline-secondary")"
+                                    aria-pressed="@(Model.MyReaction == type ? "true" : "false")">
+                                @ReactionLabel(type)
+                            </button>
+                        </form>
+                    }
+                </div>
+                <span class="small aca-muted">
+                    @Model.ReactionCount @(Model.ReactionCount == 1 ? "reaction" : "reactions")
+                    · @Model.CommentCount @(Model.CommentCount == 1 ? "comment" : "comments")
+                </span>
+            </div>
+        </div>
+    </article>
+
+    @await Html.PartialAsync("_CommentsSection", Model.Id)
+</div>
+
+@functions {
+    private static string DisplayName(string? name)
+    {
+        var trimmed = (name ?? string.Empty).Trim();
+        return trimmed.Length == 0 ? "Member" : trimmed;
+    }
+
+    private static string Initial(string? name)
+    {
+        var trimmed = (name ?? string.Empty).Trim();
+        return trimmed.Length == 0 ? "?" : trimmed[..1].ToUpperInvariant();
+    }
+
+    private static string ReactionLabel(ReactionType type) => type switch
+    {
+        ReactionType.Like => "👍 Like",
+        ReactionType.Love => "❤️ Love",
+        ReactionType.Support => "🙌 Support",
+        _ => type.ToString()
+    };
+
+    private static string TimeAgo(DateTime utc)
+    {
+        var span = DateTime.UtcNow - utc;
+        if (span.TotalSeconds < 60)
+        {
+            return "just now";
+        }
+
+        if (span.TotalMinutes < 60)
+        {
+            return $"{(int)span.TotalMinutes}m ago";
+        }
+
+        if (span.TotalHours < 24)
+        {
+            return $"{(int)span.TotalHours}h ago";
+        }
+
+        if (span.TotalDays < 7)
+        {
+            return $"{(int)span.TotalDays}d ago";
+        }
+
+        if (span.TotalDays < 30)
+        {
+            return $"{(int)(span.TotalDays / 7)}w ago";
+        }
+
+        return utc.ToLocalTime().ToString("MMM d, yyyy");
+    }
+}

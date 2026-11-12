@@ -1,0 +1,37 @@
+@model BatchDto
+@{
+    ViewData["Title"] = "Edit batch";
+}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Batches" asp-action="Index">Batches</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Edit</li>
+    </ol>
+</nav>
+
+<div class="card">
+    <div class="card-body">
+        <h1 class="h5 mb-3">Edit batch</h1>
+        <form method="post" asp-area="Admin" asp-controller="Batches" asp-action="Edit" asp-route-id="@Model.Id" class="row g-3">
+            <div class="col-12 col-md-6">
+                <label class="form-label small" for="edit-batch-name">Name</label>
+                <input id="edit-batch-name" name="name" value="@Model.Name" class="form-control" maxlength="120" required />
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label small" for="edit-batch-session">Session</label>
+                <input id="edit-batch-session" name="session" value="@Model.Session" class="form-control" maxlength="40" required />
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small" for="edit-batch-no">Batch no</label>
+                <input id="edit-batch-no" name="batchNo" type="number" min="1" max="999" value="@Model.BatchNo" class="form-control" required />
+            </div>
+            <div class="col-12">
+                <p class="small aca-muted mb-0">@Model.MemberCount member(s) belong to this batch.</p>
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Save changes</button>
+                <a class="btn btn-outline-secondary" asp-area="Admin" asp-controller="Batches" asp-action="Index">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

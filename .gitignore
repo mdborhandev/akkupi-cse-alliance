@@ -63,3 +63,6 @@ Thumbs.db
 
 # NuGet packages restored inside the repo
 .nuget/
+
+# Runtime image uploads
+src/ACA.Web/wwwroot/uploads/

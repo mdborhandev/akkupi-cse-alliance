@@ -1,0 +1,83 @@
+@model IReadOnlyList<BatchDto>
+@{
+    ViewData["Title"] = "Batches";
+    var canDelete = User.IsInRole("Admin");
+}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-1">Batches</h1>
+        <p class="aca-muted small mb-0">@Model.Count batch(es) · @Model.Sum(b => b.MemberCount) member(s) assigned</p>
+    </div>
+    <a class="btn btn-sm btn-outline-secondary" asp-area="" asp-controller="Batches" asp-action="Index">View public list</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="h6 mb-3">Add batch</h2>
+        <form method="post" asp-area="Admin" asp-controller="Batches" asp-action="Create" class="row g-2 align-items-end">
+            <div class="col-12 col-md-4">
+                <label class="form-label small" for="create-batch-name">Name</label>
+                <input id="create-batch-name" name="name" class="form-control form-control-sm" maxlength="120" required />
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small" for="create-batch-session">Session</label>
+                <input id="create-batch-session" name="session" class="form-control form-control-sm" maxlength="40" placeholder="2023-2024" required />
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small" for="create-batch-no">Batch no</label>
+                <input id="create-batch-no" name="batchNo" type="number" min="1" max="999" value="1" class="form-control form-control-sm" required />
+            </div>
+            <div class="col-6 col-md-auto">
+                <button type="submit" class="btn btn-sm btn-primary">Add batch</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="aca-empty">No batches yet. Add the first one above.</div>
+}
+else
+{
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Batch</th>
+                        <th scope="col">Session</th>
+                        <th scope="col" class="text-end">Batch no</th>
+                        <th scope="col" class="text-end">Members</th>
+                        <th scope="col" class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var batch in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@batch.Name</td>
+                        <td class="small">@batch.Session</td>
+                        <td class="text-end small">@batch.BatchNo</td>
+                        <td class="text-end small">@batch.MemberCount</td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-2">
+                                <a class="btn btn-sm btn-outline-secondary" asp-area="Admin" asp-controller="Batches"
+                                   asp-action="Edit" asp-route-id="@batch.Id">Edit</a>
+                                @if (canDelete)
+                                {
+                                    <form method="post" asp-area="Admin" asp-controller="Batches" asp-action="Delete"
+                                          asp-route-id="@batch.Id"
+                                          onsubmit="return confirm('Delete this batch? This cannot be undone.');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
