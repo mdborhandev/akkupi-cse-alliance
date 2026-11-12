@@ -316,8 +316,9 @@ PostgreSQL.
   reference a missing member; resolution tolerates missing targets.
 - **Notification actor is not FK-constrained** — notifications display a fallback name when the actor
   profile is missing.
-- **No outbox/queue** — notifications are written in the same `SaveChanges` boundary as the action;
-  there is no retry or asynchronous fan-out.
+- **No outbox/queue** — notifications are written by a follow-up `SaveChanges` in the same request,
+  not an atomic transaction; a failure between the two saves can lose the notification, and there is
+  no retry or asynchronous fan-out.
 - **In-app only** — no email, push, or real-time delivery; the navbar unread badge refreshes via
   `fetch` on load, focus, and tab visibility changes.
 - **Comments load all replies for a page** — acceptable at community scale; revisit for very large

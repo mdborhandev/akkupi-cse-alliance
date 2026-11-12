@@ -78,6 +78,8 @@
                                         </div>
                                     </form>
                                 </details>
+                                <a class="small text-body-secondary ms-1" asp-controller="Reports" asp-action="Create"
+                                   asp-route-commentId="@comment.Id">Report</a>
                             }
 
                             @if (comment.Replies.Count > 0)

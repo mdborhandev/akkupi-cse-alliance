@@ -1,0 +1,35 @@
+@model ACA.Application.DTOs.CreateReportDto
+@{
+    ViewData["Title"] = "Report";
+    var returnUrl = ViewData["ReturnUrl"] as string ?? "/Posts";
+}
+
+<div class="aca-feed">
+    <div class="card">
+        <div class="card-body p-4">
+            <h1 class="h5 mb-2">Report to moderators</h1>
+            <p class="small aca-muted mb-3">
+                Tell us what is wrong. Reports are visible only to ACA moderators and admins.
+            </p>
+
+            <form method="post" asp-action="Create" asp-controller="Reports">
+                <input type="hidden" asp-for="PostId" />
+                <input type="hidden" asp-for="CommentId" />
+                <input type="hidden" asp-for="TargetUserId" />
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+
+                <div asp-validation-summary="All" class="text-danger small mb-2"></div>
+
+                <label class="form-label" for="reason">Reason</label>
+                <textarea id="reason" asp-for="Reason" class="form-control" rows="4" maxlength="1000" required
+                          placeholder="Spam, harassment, off-topic, or anything else we should look at…"></textarea>
+                <div class="form-text">3–1000 characters.</div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-danger">Submit report</button>
+                    <a class="btn btn-outline-secondary" href="@returnUrl">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
