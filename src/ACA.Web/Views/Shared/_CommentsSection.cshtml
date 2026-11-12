@@ -7,122 +7,131 @@
     var isSignedIn = User.Identity?.IsAuthenticated == true;
     var comments = await CommentService.GetForPostAsync(Model, 1, 20, currentUserId);
     var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+    var accountName = User.Identity?.Name ?? string.Empty;
+    var accountSource = accountName.Contains('@') ? accountName.Split('@')[0] : accountName;
+    var accountInitial = accountSource.Length == 0 ? "?" : accountSource[..1].ToUpperInvariant();
 }
 
-<section class="card mt-3">
-    <div class="card-body">
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <h2 class="h6 mb-0">Comments</h2>
-            <span class="badge text-bg-secondary">@comments.TotalCount</span>
+<section class="aca-comments" aria-labelledby="commentsHeading">
+    <header class="aca-comments-head">
+        <h2 class="aca-comments-title" id="commentsHeading">
+            <partial name="_Icon" model="@("message")" /> Comments
+        </h2>
+        <span class="aca-count-pill">@comments.TotalCount</span>
+    </header>
+
+    @if (isSignedIn)
+    {
+        <form method="post" asp-controller="Comments" asp-action="Add" class="aca-comment-composer">
+            <input type="hidden" name="postId" value="@Model" />
+            <span class="aca-avatar aca-avatar-sm" aria-hidden="true">@accountInitial</span>
+            <div class="flex-grow-1">
+                <label class="visually-hidden" for="newComment-@Model">Write a comment</label>
+                <textarea id="newComment-@Model" name="content" class="form-control" rows="1"
+                          maxlength="2000" required placeholder="Write a comment…"></textarea>
+            </div>
+            <button type="submit" class="btn btn-sm btn-primary">Post</button>
+        </form>
+    }
+    else
+    {
+        <p class="aca-comments-login">
+            <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@returnUrl">Log in</a>
+            to join the conversation.
+        </p>
+    }
+
+    @if (comments.Items.Count == 0)
+    {
+        <div class="aca-empty aca-empty--compact">
+            <div class="aca-empty-icon"><partial name="_Icon" model="@("message")" /></div>
+            <p class="mb-0 small">No comments yet. Start the conversation.</p>
         </div>
-
-        @if (isSignedIn)
-        {
-            <form method="post" asp-controller="Comments" asp-action="Add" class="mb-4">
-                <input type="hidden" name="postId" value="@Model" />
-                <div class="mb-2">
-                    <label class="form-label small aca-muted" for="newComment-@Model">Add a comment</label>
-                    <textarea id="newComment-@Model" name="content" class="form-control" rows="2"
-                              maxlength="2000" required placeholder="Write a comment…"></textarea>
-                </div>
-                <button type="submit" class="btn btn-sm btn-primary">Comment</button>
-            </form>
-        }
-        else
-        {
-            <p class="small aca-muted">
-                <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@returnUrl">Log in</a> to join the conversation.
-            </p>
-        }
-
-        @if (comments.Items.Count == 0)
-        {
-            <div class="aca-empty">No comments yet. Start the conversation.</div>
-        }
-        else
-        {
-            <ul class="list-unstyled d-flex flex-column gap-3 mb-0">
-                @foreach (var comment in comments.Items)
-                {
-                    <li class="d-flex gap-2">
-                        @if (!string.IsNullOrWhiteSpace(comment.AuthorPhotoUrl))
-                        {
-                            <img src="@comment.AuthorPhotoUrl" alt="" class="aca-avatar aca-avatar-sm flex-shrink-0" />
-                        }
-                        else
-                        {
-                            <span class="aca-avatar aca-avatar-sm flex-shrink-0 d-inline-flex align-items-center justify-content-center fw-semibold small border">
-                                @Initial(comment.AuthorName)
+    }
+    else
+    {
+        <ul class="aca-thread">
+            @foreach (var comment in comments.Items)
+            {
+                <li class="aca-comment">
+                    @if (!string.IsNullOrWhiteSpace(comment.AuthorPhotoUrl))
+                    {
+                        <img src="@comment.AuthorPhotoUrl" alt="" class="aca-avatar aca-avatar-sm" loading="lazy" />
+                    }
+                    else
+                    {
+                        <span class="aca-avatar aca-avatar-sm" aria-hidden="true">@Initial(comment.AuthorName)</span>
+                    }
+                    <div class="aca-comment-body">
+                        <div class="aca-comment-meta">
+                            <span class="aca-comment-author">@comment.AuthorName</span>
+                            <span class="aca-comment-time" title="@comment.CreatedAtUtc.ToString("u")">
+                                @comment.CreatedAtUtc.ToLocalTime().ToString("g")
                             </span>
-                        }
-                        <div class="flex-grow-1">
-                            <div class="d-flex flex-wrap align-items-baseline gap-2">
-                                <span class="fw-semibold">@comment.AuthorName</span>
-                                <span class="small aca-muted" title="@comment.CreatedAtUtc.ToString("u")">
-                                    @comment.CreatedAtUtc.ToLocalTime().ToString("g")
-                                </span>
-                            </div>
-                            <p class="aca-post-body small mb-1">@comment.Content</p>
+                        </div>
+                        <p class="aca-comment-text">@comment.Content</p>
 
-                            @if (isSignedIn)
-                            {
-                                <details class="mt-1">
-                                    <summary class="small text-body-secondary">Reply</summary>
-                                    <form method="post" asp-controller="Comments" asp-action="Add" class="mt-2">
+                        @if (isSignedIn)
+                        {
+                            <div class="aca-comment-actions">
+                                <details class="aca-reply">
+                                    <summary>
+                                        <partial name="_Icon" model="@("message")" /> Reply
+                                    </summary>
+                                    <form method="post" asp-controller="Comments" asp-action="Add" class="aca-reply-form">
                                         <input type="hidden" name="postId" value="@Model" />
                                         <input type="hidden" name="parentCommentId" value="@comment.Id" />
-                                        <div class="input-group input-group-sm">
-                                            <textarea name="content" class="form-control" rows="1" maxlength="2000" required
-                                                      placeholder="Reply to @comment.AuthorName…"></textarea>
-                                            <button type="submit" class="btn btn-outline-primary">Reply</button>
-                                        </div>
+                                        <label class="visually-hidden" for="reply-@comment.Id">Reply</label>
+                                        <textarea id="reply-@comment.Id" name="content" class="form-control" rows="1"
+                                                  maxlength="2000" required placeholder="Reply to @comment.AuthorName…"></textarea>
+                                        <button type="submit" class="btn btn-sm btn-primary">Send</button>
                                     </form>
                                 </details>
-                                <a class="small text-body-secondary ms-1" asp-controller="Reports" asp-action="Create"
-                                   asp-route-commentId="@comment.Id">Report</a>
-                            }
+                                <a class="aca-comment-link" asp-controller="Reports" asp-action="Create"
+                                   asp-route-commentId="@comment.Id">
+                                    <partial name="_Icon" model="@("flag")" /> Report
+                                </a>
+                            </div>
+                        }
 
-                            @if (comment.Replies.Count > 0)
-                            {
-                                <ul class="list-unstyled d-flex flex-column gap-2 mt-2 mb-0 ps-2 border-start">
-                                    @foreach (var reply in comment.Replies)
-                                    {
-                                        <li class="d-flex gap-2 ps-2">
-                                            @if (!string.IsNullOrWhiteSpace(reply.AuthorPhotoUrl))
-                                            {
-                                                <img src="@reply.AuthorPhotoUrl" alt="" class="aca-avatar aca-avatar-sm flex-shrink-0" />
-                                            }
-                                            else
-                                            {
-                                                <span class="aca-avatar aca-avatar-sm flex-shrink-0 d-inline-flex align-items-center justify-content-center fw-semibold small border">
-                                                    @Initial(reply.AuthorName)
+                        @if (comment.Replies.Count > 0)
+                        {
+                            <ul class="aca-thread aca-thread--reply">
+                                @foreach (var reply in comment.Replies)
+                                {
+                                    <li class="aca-comment aca-comment--reply">
+                                        @if (!string.IsNullOrWhiteSpace(reply.AuthorPhotoUrl))
+                                        {
+                                            <img src="@reply.AuthorPhotoUrl" alt="" class="aca-avatar aca-avatar-xs" loading="lazy" />
+                                        }
+                                        else
+                                        {
+                                            <span class="aca-avatar aca-avatar-xs" aria-hidden="true">@Initial(reply.AuthorName)</span>
+                                        }
+                                        <div class="aca-comment-body">
+                                            <div class="aca-comment-meta">
+                                                <span class="aca-comment-author">@reply.AuthorName</span>
+                                                <span class="aca-comment-time" title="@reply.CreatedAtUtc.ToString("u")">
+                                                    @reply.CreatedAtUtc.ToLocalTime().ToString("g")
                                                 </span>
-                                            }
-                                            <div class="flex-grow-1">
-                                                <div class="d-flex flex-wrap align-items-baseline gap-2">
-                                                    <span class="fw-semibold">@reply.AuthorName</span>
-                                                    <span class="small aca-muted" title="@reply.CreatedAtUtc.ToString("u")">
-                                                        @reply.CreatedAtUtc.ToLocalTime().ToString("g")
-                                                    </span>
-                                                </div>
-                                                <p class="aca-post-body small mb-0">@reply.Content</p>
                                             </div>
-                                        </li>
-                                    }
-                                </ul>
-                            }
-                        </div>
-                    </li>
-                }
-            </ul>
-            @if (comments.TotalCount > comments.Items.Count)
-            {
-                <p class="small aca-muted mt-3 mb-0">
-                    Showing the latest @comments.Items.Count of @comments.TotalCount comments.
-                </p>
+                                            <p class="aca-comment-text">@reply.Content</p>
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </li>
             }
+        </ul>
+        @if (comments.TotalCount > comments.Items.Count)
+        {
+            <p class="aca-comments-more">
+                Showing the latest @comments.Items.Count of @comments.TotalCount comments.
+            </p>
         }
-    </div>
+    }
 </section>
 
 @functions {

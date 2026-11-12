@@ -4,47 +4,48 @@
 }
 
 <div class="aca-feed">
-    <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
-        <h1 class="h4 fw-semibold mb-0">Edit post</h1>
-        <a class="small text-decoration-none" asp-action="Details" asp-route-id="@Model.Id">Back to post</a>
-    </div>
+    <a class="aca-back" asp-action="Details" asp-route-id="@Model.Id">
+        <partial name="_Icon" model="@("chevron-left")" /> Back to post
+    </a>
 
-    <div class="card">
-        <div class="card-body">
-            <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
-                <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
-
-                <div class="mb-3">
-                    <label asp-for="Content" class="form-label">Post content</label>
-                    <textarea asp-for="Content" class="form-control" rows="6" maxlength="5000" required></textarea>
-                    <span asp-validation-for="Content" class="text-danger small"></span>
-                    <div class="form-text">Up to 5,000 characters.</div>
-                </div>
-
-                @if (Model.Images.Count > 0)
-                {
-                    <div class="mb-3">
-                        <span class="form-label d-block">Attached images</span>
-                        <div class="row g-2">
-                            @foreach (var image in Model.Images)
-                            {
-                                <div class="col-4">
-                                    <div class="ratio ratio-1x1 rounded overflow-hidden border">
-                                        <img src="@image.Url" alt="Attached image"
-                                             class="w-100 h-100 object-fit-cover" loading="lazy" />
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                        <div class="form-text">Images stay as originally posted.</div>
-                    </div>
-                }
-
-                <div class="d-flex flex-wrap gap-2">
-                    <button type="submit" class="btn btn-primary">Save changes</button>
-                    <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
-                </div>
-            </form>
+    <div class="aca-page-head">
+        <div>
+            <span class="aca-eyebrow"><partial name="_Icon" model="@("pen")" /> Editing</span>
+            <h1>Edit post</h1>
+            <p class="aca-page-sub">Changes are visible to the whole community right away.</p>
         </div>
     </div>
+
+    <form method="post" asp-action="Edit" asp-route-id="@Model.Id" class="aca-compose-card">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-3"></div>
+
+        <label asp-for="Content" class="form-label">Post content</label>
+        <textarea asp-for="Content" class="form-control aca-textarea" rows="7" maxlength="5000" required></textarea>
+        <span asp-validation-for="Content" class="text-danger small"></span>
+        <div class="form-text">Up to 5,000 characters.</div>
+
+        @if (Model.Images.Count > 0)
+        {
+            <div class="mt-4">
+                <span class="form-label d-block">Attached images</span>
+                <div class="aca-media-preview">
+                    @foreach (var image in Model.Images)
+                    {
+                        <div class="aca-media-item">
+                            <img src="@image.Url" alt="Attached image" loading="lazy" />
+                        </div>
+                    }
+                </div>
+                <div class="form-text">Images stay as originally posted.</div>
+            </div>
+        }
+
+        <div class="aca-compose-foot">
+            <span class="aca-faint small">Posted @Model.CreatedAtUtc.ToLocalTime().ToString("MMM d, yyyy")</span>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save changes</button>
+            </div>
+        </div>
+    </form>
 </div>

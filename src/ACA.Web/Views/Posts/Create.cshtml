@@ -4,38 +4,41 @@
 }
 
 <div class="aca-feed">
-    <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
-        <h1 class="h4 fw-semibold mb-0">Create a post</h1>
-        <a class="small text-decoration-none" asp-action="Index">Back to feed</a>
-    </div>
+    <a class="aca-back" asp-action="Index">
+        <partial name="_Icon" model="@("chevron-left")" /> Back to feed
+    </a>
 
-    <div class="card">
-        <div class="card-body">
-            <form method="post" asp-action="Create" enctype="multipart/form-data">
-                <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
-
-                <div class="mb-3">
-                    <label asp-for="Content" class="form-label">What's on your mind?</label>
-                    <textarea asp-for="Content" class="form-control" rows="6" maxlength="5000" required
-                              placeholder="Share an update with the community…"></textarea>
-                    <span asp-validation-for="Content" class="text-danger small"></span>
-                    <div class="form-text">Up to 5,000 characters.</div>
-                </div>
-
-                <div class="mb-3">
-                    <label for="images" class="form-label">
-                        Images <span class="aca-muted fw-normal">(optional)</span>
-                    </label>
-                    <input type="file" id="images" name="images" class="form-control"
-                           multiple accept="image/jpeg,image/png,image/webp" />
-                    <div class="form-text">Up to 4 images. JPEG, PNG, or WebP, max 5 MB each.</div>
-                </div>
-
-                <div class="d-flex flex-wrap gap-2">
-                    <button type="submit" class="btn btn-primary">Publish post</button>
-                    <a class="btn btn-outline-secondary" asp-action="Index">Cancel</a>
-                </div>
-            </form>
+    <div class="aca-page-head">
+        <div>
+            <span class="aca-eyebrow"><partial name="_Icon" model="@("pen")" /> New post</span>
+            <h1>Share something</h1>
+            <p class="aca-page-sub">An update, a question, a memory — every batch is listening.</p>
         </div>
     </div>
+
+    <form method="post" asp-action="Create" enctype="multipart/form-data" class="aca-compose-card">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-3"></div>
+
+        <label asp-for="Content" class="form-label">What's on your mind?</label>
+        <textarea asp-for="Content" class="form-control aca-textarea" rows="7" maxlength="5000" required
+                  placeholder="Write your post…"></textarea>
+        <span asp-validation-for="Content" class="text-danger small"></span>
+        <div class="form-text">Up to 5,000 characters.</div>
+
+        <div class="aca-compose-foot">
+            <div class="aca-upload">
+                <label for="images" class="aca-upload-label">
+                    <partial name="_Icon" model="@("image")" /> Add photos
+                </label>
+                <input type="file" id="images" name="images" class="form-control" multiple
+                       accept="image/jpeg,image/png,image/webp" />
+                <div class="form-text">Up to 4 images · JPEG, PNG or WebP · max 5 MB each</div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" asp-action="Index">Cancel</a>
+                <button type="submit" class="btn btn-primary">Publish post</button>
+            </div>
+        </div>
+    </form>
 </div>
